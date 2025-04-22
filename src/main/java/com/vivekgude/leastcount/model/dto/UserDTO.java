@@ -16,4 +16,8 @@ public class UserDTO {
 
     @Size(min = 8)
     private String password;
+
+    UserDTO(String name) {
+        this.name = name;
+    }
 }

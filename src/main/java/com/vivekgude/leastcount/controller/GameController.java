@@ -3,7 +3,6 @@ package com.vivekgude.leastcount.controller;
 import com.vivekgude.leastcount.model.dto.GameDTO;
 import com.vivekgude.leastcount.service.GameService;
 import com.vivekgude.leastcount.util.ResponseUtil;
-import com.vivekgude.leastcount.util.Utils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -11,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.Map;
 
-import static com.vivekgude.leastcount.Constants.*;
+import static com.vivekgude.leastcount.constants.Constants.*;
 
 public class GameController extends BaseController {
 

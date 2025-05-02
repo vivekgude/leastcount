@@ -8,12 +8,10 @@ import com.vivekgude.leastcount.redis.PlayerCache;
 import com.vivekgude.leastcount.util.Utils;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.ArrayList;
 import java.util.Collections;
 
-import static com.vivekgude.leastcount.Constants.*;
+import static com.vivekgude.leastcount.constants.Constants.*;
 import static com.vivekgude.leastcount.redis.GameCache.*;
-import static com.vivekgude.leastcount.redis.PlayerCache.*;
 
 public class GameServiceImpl implements GameService {
 

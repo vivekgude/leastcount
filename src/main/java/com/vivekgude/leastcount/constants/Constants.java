@@ -1,4 +1,4 @@
-package com.vivekgude.leastcount;
+package com.vivekgude.leastcount.constants;
 
 public class Constants {
     public static final String USER_CREATED = "User is created";

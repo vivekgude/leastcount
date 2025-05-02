@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import static com.vivekgude.leastcount.Constants.*;
+import static com.vivekgude.leastcount.constants.Constants.*;
 
 @Slf4j
 @RestController

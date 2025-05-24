@@ -1,29 +1,26 @@
 package com.vivekgude.leastcount.model.dao;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
+@Data
 @Entity
 @Table(name = "users")
-@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class User {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
 
-    @Column(name = "email_id", unique = true, nullable = false)
-    private String emailId;
+    @Column(unique = true, nullable = false)
+    private String username;
 
-    @Column(name = "name", nullable = false)
-    private String name;
-
-    @Column(name = "password", nullable = false)
+    @Column(nullable = false)
     private String password;
 
-    public User(String emailId, String name, String password) {
-        this.emailId = emailId;
-        this.name = name;
-        this.password = password;
-    }
+    @Column(unique = true, nullable = false)
+    private String email;
 }

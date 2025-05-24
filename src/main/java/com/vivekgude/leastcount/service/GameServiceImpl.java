@@ -7,6 +7,7 @@ import com.vivekgude.leastcount.redis.GameCache;
 import com.vivekgude.leastcount.redis.PlayerCache;
 import com.vivekgude.leastcount.util.Utils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 import java.util.List;
@@ -15,6 +16,7 @@ import java.util.Optional;
 import static com.vivekgude.leastcount.constants.Constants.*;
 import static com.vivekgude.leastcount.redis.GameCache.*;
 
+@Service
 public class GameServiceImpl implements GameService {
 
     @Autowired
@@ -24,7 +26,7 @@ public class GameServiceImpl implements GameService {
     PlayerCache playerCache;
 
     @Override
-    public GameDTO createGame(int userId, String userName) {
+    public GameDTO createGame(long userId, String userName) {
         String gameId = Utils.generateString(GAME_ID_SIZE);
         //        long startTime = System.currentTimeMillis() + 10 * 60 * 1000;
         gameCache.addFieldToMap(GAME + gameId, STATE, GameState.WAITING.toString());
@@ -36,7 +38,7 @@ public class GameServiceImpl implements GameService {
     }
 
     @Override
-    public Optional<GameDTO> joinGame(int userId, String userName, String gameId) {
+    public Optional<GameDTO> joinGame(long userId, String userName, String gameId) {
         int gameState = gameCache.getGameState(gameId);
         if (gameState == GameState.INVALID.getType()) {
             return Optional.empty();

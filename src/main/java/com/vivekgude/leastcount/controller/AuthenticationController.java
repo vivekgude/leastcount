@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/auth")
-public class AuthenticationController {
+public class AuthenticationController extends BaseController{
 
     private final AuthenticationManager authenticationManager;
     private final UserService userService;

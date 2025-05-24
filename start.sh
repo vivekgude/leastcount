@@ -19,6 +19,7 @@ docker build -t leastcount-backend-image .
 echo "Starting new container..."
 docker run -d \
     --name leastcount-backend \
+    --network host \
     -p 8080:8080 \
     leastcount-backend-image
 

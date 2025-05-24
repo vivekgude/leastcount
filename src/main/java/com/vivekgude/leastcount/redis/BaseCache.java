@@ -13,6 +13,7 @@ public class BaseCache {
 
     public static final String GAME = "game:";
     public static final String PLAYER = "player:";
+    public static final String JOINED_PLAYERS = "joinedPlayers:";
 
     @Autowired
     public JedisPool jedisPool;
@@ -46,7 +47,7 @@ public class BaseCache {
         }
     }
 
-    public void addFieldToSet(String key, String field, String value) {
+    public void addFieldToMap(String key, String field, String value) {
         try {
             long result = jedisPool.getResource().hset(key, field, value);
             log.info(String.valueOf(result));
@@ -55,7 +56,7 @@ public class BaseCache {
         }
     }
 
-    public void addFieldsToSet(String key, Map<String, String> fieldsVsValue) {
+    public void addFieldsToMap(String key, Map<String, String> fieldsVsValue) {
         try {
             long result = jedisPool.getResource().hset(key, fieldsVsValue);
             log.info(String.valueOf(result));
@@ -64,7 +65,7 @@ public class BaseCache {
         }
     }
 
-    public String getFieldInSet(String key, String field) {
+    public String getFieldInMap(String key, String field) {
         try {
             String result = jedisPool.getResource().hget(key, field);
             log.info(String.valueOf(result));
@@ -75,7 +76,7 @@ public class BaseCache {
         }
     }
 
-    public Map<String, String> getFieldsInSet(String key) {
+    public Map<String, String> getFieldsInMap(String key) {
         try {
             Map<String, String> result = jedisPool.getResource().hgetAll(key);
             log.info(String.valueOf(result));
@@ -102,6 +103,26 @@ public class BaseCache {
             return result;
         } catch (Exception e) {
             log.error("Error getting values in List:{}", key);
+            return null;
+        }
+    }
+
+    public void addValuesInSet(String key, String... values) {
+        try {
+            long result = jedisPool.getResource().sadd(key, values);
+            log.info(String.valueOf(result));
+        } catch (Exception e) {
+            log.error("Error adding values in Set:{}", key);
+        }
+    }
+
+    public List<String> getValuesInSet(String key) {
+        try {
+            Set<String> result = jedisPool.getResource().smembers(key);
+            log.info(String.valueOf(result));
+            return result.stream().toList();
+        } catch (Exception e) {
+            log.error("Error getting values in Set:{}", key);
             return null;
         }
     }

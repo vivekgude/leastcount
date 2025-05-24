@@ -2,7 +2,7 @@ package com.vivekgude.leastcount.enums;
 
 public enum GameState {
 
-    WAITING(10), STARTING(20), INPROGRESS(30), COMPLETED(40);
+    INVALID(0), WAITING(10), STARTING(20), INPROGRESS(30), COMPLETED(40);
 
     private final int type;
 

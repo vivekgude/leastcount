@@ -51,7 +51,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
         
         if (gameId != null) {
             WebSocketUtil.removeSession(gameId);
-            log.info("WebSocket connection closed for gameId:{} userId:{}", gameId, userId);
+            log.info("WebSocket connection closed for gameId:{} userId:{} status:{}", gameId, userId, status);
         }
     }
 

@@ -10,6 +10,7 @@ import org.springframework.http.server.ServletServerHttpRequest;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.WebSocketHandler;
+import org.springframework.web.socket.WebSocketHttpHeaders;
 import org.springframework.web.socket.server.HandshakeInterceptor;
 
 import java.util.Map;
@@ -35,15 +36,15 @@ public class WebSocketAuthInterceptor implements HandshakeInterceptor {
                                  WebSocketHandler wsHandler, Map<String, Object> attributes) throws Exception {
         if (request instanceof ServletServerHttpRequest) {
             ServletServerHttpRequest servletRequest = (ServletServerHttpRequest) request;
-            
-            // Get token from Authorization header
-            String authHeader = servletRequest.getServletRequest().getHeader(AUTHORIZATION);
-            if (authHeader == null || !authHeader.startsWith(BEARER)) {
+
+            // Get token from header
+            WebSocketHttpHeaders headers = new WebSocketHttpHeaders(servletRequest.getHeaders());
+            String token = headers.getSecWebSocketProtocol().getFirst();
+
+            if (token == null) {
                 log.error("WebSocket connection attempt without valid Authorization header");
                 return false;
             }
-
-            String token = authHeader.substring(BEARER.length());
 
             try {
                 // Extract username from token
@@ -54,6 +55,7 @@ public class WebSocketAuthInterceptor implements HandshakeInterceptor {
                     if (jwtUtils.validateToken(token, userDetails)) {
                         attributes.put(USERNAME, username);
                         attributes.put(USERID, userDetails.getUserId());
+                        response.getHeaders().set("Sec-WebSocket-Protocol", token);
                         return true;
                     } else {
                         log.error("Invalid token for user: {}", username);

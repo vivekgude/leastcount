@@ -1,12 +1,12 @@
 package com.vivekgude.leastcount.controller;
 
 import com.vivekgude.leastcount.model.dto.GameDTO;
+import com.vivekgude.leastcount.security.CustomUserDetails;
 import com.vivekgude.leastcount.service.GameService;
 import com.vivekgude.leastcount.util.ResponseUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -29,7 +29,7 @@ public class GameController extends BaseController {
     }
 
     @PostMapping("/createGame")
-    public ResponseEntity createGame(@AuthenticationPrincipal User user, @RequestBody Map<String, String> req) {
+    public ResponseEntity createGame(@AuthenticationPrincipal CustomUserDetails user, @RequestBody Map<String, String> req) {
         //TODO: change the RequestBody to POJO
         GameDTO gameDetails = gameService.createGame(Long.parseLong(req.get("userId")),
                 req.get("username"));
@@ -38,7 +38,7 @@ public class GameController extends BaseController {
     }
 
     @PostMapping("/joinGame")
-    public ResponseEntity joinGame(@RequestBody Map<String, String> req) {
+    public ResponseEntity joinGame(@AuthenticationPrincipal CustomUserDetails user, @RequestBody Map<String, String> req) {
         //TODO: change the RequestBody to POJO
         Optional<GameDTO> gameDetails = gameService.joinGame(Long.parseLong(req.get("userId")),
                 req.get("username"), req.get("gameId"));

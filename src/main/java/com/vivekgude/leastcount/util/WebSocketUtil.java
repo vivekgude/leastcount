@@ -30,6 +30,7 @@ public class WebSocketUtil {
     }
 
     public static void broadcastToGame(String gameId, WebSocketMessage message) throws IOException {
+        //TODO: fix broadcast logic
         WebSocketSession session = sessions.get(gameId);
         if (session != null && session.isOpen()) {
             String jsonMessage = gson.toJson(message);

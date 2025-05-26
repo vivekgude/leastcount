@@ -3,6 +3,7 @@ package com.vivekgude.leastcount.service;
 import com.vivekgude.leastcount.model.RegisterRequest;
 import com.vivekgude.leastcount.model.dao.User;
 import com.vivekgude.leastcount.repositories.UserRepository;
+import com.vivekgude.leastcount.security.CustomUserDetails;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -27,10 +28,11 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
 
-        return new org.springframework.security.core.userdetails.User(
+        return new CustomUserDetails(
                 user.getUsername(),
                 user.getPassword(),
-                Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"))
+                Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")),
+                user.getId()
         );
     }
 

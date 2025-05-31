@@ -15,15 +15,19 @@ import java.util.Optional;
 
 import static com.vivekgude.leastcount.constants.Constants.*;
 import static com.vivekgude.leastcount.redis.GameCache.*;
+import static com.vivekgude.leastcount.redis.PlayerCache.*;
 
 @Service
 public class GameServiceImpl implements GameService {
 
-    @Autowired
-    GameCache gameCache;
+    private final GameCache gameCache;
 
-    @Autowired
-    PlayerCache playerCache;
+    private final PlayerCache playerCache;
+
+    public GameServiceImpl(GameCache gameCache, PlayerCache playerCache) {
+        this.gameCache = gameCache;
+        this.playerCache = playerCache;
+    }
 
     @Override
     public GameDTO createGame(long userId, String userName) {
@@ -33,6 +37,7 @@ public class GameServiceImpl implements GameService {
         gameCache.addFieldToMap(GAME + gameId, HOST, String.valueOf(userId));
         gameCache.addFieldToMap(GAME + gameId, HOST_NAME, userName);
         gameCache.addValuesInSet(JOINED_PLAYERS + gameId, String.valueOf(userId));
+        playerCache.addFieldToMap(PLAYER + userId + ":" + GAME + gameId, PLAYER_NAME, userName);
         UserDataDTO userDataDTO = new UserDataDTO(userId, userName);
         return new GameDTO(gameId, userDataDTO, Collections.singletonList(userDataDTO));
     }
@@ -42,16 +47,34 @@ public class GameServiceImpl implements GameService {
         int gameState = gameCache.getGameState(gameId);
         if (gameState == GameState.INVALID.getType()) {
             return Optional.empty();
-        } else if (gameState == GameState.STARTING.getType()) {
-            gameCache.addValuesInSet(JOINED_PLAYERS + gameId, String.valueOf(userId));
-            long host = Long.parseLong(gameCache.getFieldInMap(GAME + gameId, HOST));
-            String hostName = gameCache.getFieldInMap(GAME + gameId, HOST_NAME);
+        } else if (gameState == GameState.WAITING.getType()) {
             List<Long> joinedPlayers = gameCache.getJoinedPlayers(gameId);
-            UserDataDTO userDataDTO = new UserDataDTO(host, hostName);
-            return Optional.of(new GameDTO(gameId, userDataDTO, Collections.singletonList(userDataDTO)));
+            if (!joinedPlayers.contains(userId)) {
+                gameCache.addValuesInSet(JOINED_PLAYERS + gameId, String.valueOf(userId));
+                playerCache.addFieldToMap(PLAYER + userId + ":" + GAME + gameId, PLAYER_NAME, userName);
+                long host = Long.parseLong(gameCache.getFieldInMap(GAME + gameId, HOST));
+                String hostName = gameCache.getFieldInMap(GAME + gameId, HOST_NAME);
+//                List<Long> joinedPlayers = gameCache.getJoinedPlayers(gameId);
+                UserDataDTO userDataDTO = new UserDataDTO(host, hostName);
+                return Optional.of(new GameDTO(gameId, userDataDTO, Collections.singletonList(userDataDTO)));
+            }
+            return Optional.empty();
         } else {
             return Optional.empty();
         }
+    }
+
+    public boolean exitGame(long userId, String userName, String gameId) {
+        int gameState = gameCache.getGameState(gameId);
+        if (gameState == GameState.WAITING.getType()) {
+            List<Long> joinedPlayers = gameCache.getJoinedPlayers(gameId);
+            if (joinedPlayers.contains(userId)) {
+                gameCache.removeValuesInSet(JOINED_PLAYERS + gameId, String.valueOf(userId));
+                playerCache.deleteKeys(PLAYER + userId + ":" + GAME + gameId);
+                return true;
+            }
+        }
+        return false;
     }
 
 }

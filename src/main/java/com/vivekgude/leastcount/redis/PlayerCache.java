@@ -7,6 +7,7 @@ import java.util.List;
 @Component
 public class PlayerCache extends BaseCache {
 
+    public static final String PLAYER_NAME = "playerName";
     public static final String PLAYER_CARDS = "playerCards";
 
     public void setPlayerCards(String gameId, String playerId, List<String> playerCards) {

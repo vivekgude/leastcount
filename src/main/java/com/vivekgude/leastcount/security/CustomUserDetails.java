@@ -8,9 +8,9 @@ import java.util.Collection;
 
 @Getter
 public class CustomUserDetails extends User {
-    private final Long userId;
+    private final long userId;
 
-    public CustomUserDetails(String username, String password, Collection<? extends GrantedAuthority> authorities, Long userId) {
+    public CustomUserDetails(String username, String password, Collection<? extends GrantedAuthority> authorities, long userId) {
         super(username, password, authorities);
         this.userId = userId;
     }

@@ -2,6 +2,7 @@ package com.vivekgude.leastcount.redis;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
 import java.util.List;
@@ -16,115 +17,120 @@ public class BaseCache {
     public static final String JOINED_PLAYERS = "joinedPlayers:";
 
     @Autowired
-    public JedisPool jedisPool;
+    private JedisPool jedisPool;
 
-    public void addKeyValue(String key, String value) {
-        try {
-            String result = jedisPool.getResource().set(key, value);
-//            log.info(String.valueOf(result));
+    public boolean addKeyValue(String key, String value) {
+        try (Jedis jedis = jedisPool.getResource()) {
+            String result = jedis.set(key, value);
+            return "OK".equals(result);
         } catch (Exception e) {
             log.error("Error adding key:{}, value:{}", key, value, e);
+            return false;
         }
     }
 
-    public void deleteKey(String... keys) {
-        try {
-            long result = jedisPool.getResource().del(keys);
-//            log.info(String.valueOf(result));
+    public long deleteKeys(String... keys) {
+        try (Jedis jedis = jedisPool.getResource()) {
+            return jedis.del(keys);
         } catch (Exception e) {
-            log.error("Error deleting key:{}", keys, e);
+            log.error("Error deleting keys:{}", (Object) keys, e);
+            return 0;
         }
     }
 
     public String getVal(String key) {
-        try {
-            String result = jedisPool.getResource().get(key);
-//            log.info(String.valueOf(result));
-            return result;
+        try (Jedis jedis = jedisPool.getResource()) {
+            return jedis.get(key);
         } catch (Exception e) {
             log.error("Error getting key:{}", key, e);
             return null;
         }
     }
 
-    public void addFieldToMap(String key, String field, String value) {
-        try {
-            long result = jedisPool.getResource().hset(key, field, value);
-//            log.info(String.valueOf(result));
+    public boolean addFieldToMap(String key, String field, String value) {
+        try (Jedis jedis = jedisPool.getResource()) {
+            long result = jedis.hset(key, field, value);
+            return result >= 0;
         } catch (Exception e) {
             log.error("Error adding field to key:{}, field:{}, value:{}", key, field, value, e);
+            return false;
         }
     }
 
-    public void addFieldsToMap(String key, Map<String, String> fieldsVsValue) {
-        try {
-            long result = jedisPool.getResource().hset(key, fieldsVsValue);
-//            log.info(String.valueOf(result));
+    public boolean addFieldsToMap(String key, Map<String, String> fieldsVsValue) {
+        try (Jedis jedis = jedisPool.getResource()) {
+            String result = jedis.hmset(key, fieldsVsValue);
+            return "OK".equals(result);
         } catch (Exception e) {
             log.error("Error adding fields to key:{}, fieldsVsValue:{}", key, fieldsVsValue, e);
+            return false;
         }
     }
 
     public String getFieldInMap(String key, String field) {
-        try {
-            String result = jedisPool.getResource().hget(key, field);
-//            log.info(String.valueOf(result));
-            return result;
+        try (Jedis jedis = jedisPool.getResource()) {
+            return jedis.hget(key, field);
         } catch (Exception e) {
-            log.error("Error getting field in set:{}", key);
+            log.error("Error getting field in map:{}", key, e);
             return null;
         }
     }
 
     public Map<String, String> getFieldsInMap(String key) {
-        try {
-            Map<String, String> result = jedisPool.getResource().hgetAll(key);
-//            log.info(String.valueOf(result));
-            return result;
+        try (Jedis jedis = jedisPool.getResource()) {
+            return jedis.hgetAll(key);
         } catch (Exception e) {
-            log.error("Error getting fields in set:{}", key);
+            log.error("Error getting fields in map:{}", key, e);
             return null;
         }
     }
 
-    public void addValuesInList(String key, String... values) {
-        try {
-            long result = jedisPool.getResource().lpush(key, values);
-//            log.info(String.valueOf(result));
+    public boolean addValuesInList(String key, String... values) {
+        try (Jedis jedis = jedisPool.getResource()) {
+            long result = jedis.lpush(key, values);
+            return result > 0;
         } catch (Exception e) {
-            log.error("Error adding values in List:{}", key);
+            log.error("Error adding values in List:{}", key, e);
+            return false;
         }
     }
 
     public List<String> getValuesInList(String key) {
-        try {
-            List<String> result = jedisPool.getResource().lrange(key, 0, -1);
-//            log.info(String.valueOf(result));
-            return result;
+        try (Jedis jedis = jedisPool.getResource()) {
+            return jedis.lrange(key, 0, -1);
         } catch (Exception e) {
-            log.error("Error getting values in List:{}", key);
+            log.error("Error getting values in List:{}", key, e);
             return null;
         }
     }
 
-    public void addValuesInSet(String key, String... values) {
-        try {
-            long result = jedisPool.getResource().sadd(key, values);
-//            log.info(String.valueOf(result));
+    public boolean addValuesInSet(String key, String... values) {
+        try (Jedis jedis = jedisPool.getResource()) {
+            long result = jedis.sadd(key, values);
+            return result > 0;
         } catch (Exception e) {
-            log.error("Error adding values in Set:{}", key);
+            log.error("Error adding values in Set:{}", key, e);
+            return false;
         }
     }
 
     public List<String> getValuesInSet(String key) {
-        try {
-            Set<String> result = jedisPool.getResource().smembers(key);
-//            log.info(String.valueOf(result));
+        try (Jedis jedis = jedisPool.getResource()) {
+            Set<String> result = jedis.smembers(key);
             return result.stream().toList();
         } catch (Exception e) {
-            log.error("Error getting values in Set:{}", key);
+            log.error("Error getting values in Set:{}", key, e);
             return null;
         }
     }
 
+    public boolean removeValuesInSet(String key, String... values) {
+        try (Jedis jedis = jedisPool.getResource()) {
+            long result = jedis.srem(key, values);
+            return result > 0;
+        } catch (Exception e) {
+            log.error("Error removing values in Set:{}", key, e);
+            return false;
+        }
+    }
 }

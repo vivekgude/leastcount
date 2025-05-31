@@ -8,4 +8,6 @@ public interface GameService {
     GameDTO createGame(long userId, String userName);
 
     Optional<GameDTO> joinGame(long userId, String userName, String gameId);
+
+    boolean exitGame(long userId, String userName, String gameId);
 }

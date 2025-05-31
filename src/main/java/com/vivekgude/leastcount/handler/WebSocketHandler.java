@@ -1,7 +1,7 @@
 package com.vivekgude.leastcount.handler;
 
 import com.google.gson.Gson;
-import com.vivekgude.leastcount.model.WebSocketMessage;
+import com.vivekgude.leastcount.model.ws.WebSocketReq;
 import com.vivekgude.leastcount.util.WebSocketUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,11 +64,11 @@ public class WebSocketHandler extends TextWebSocketHandler {
             
             log.info("Received message for gameId:{} userId:{} username:{} message:{}", gameId, userId, username, message.getPayload());
 
-            WebSocketMessage webSocketMessage = gson.fromJson(message.getPayload(), WebSocketMessage.class);
-            webSocketMessage.setSender(userId); // Add userId to the message
+            WebSocketReq webSocketReq = gson.fromJson(message.getPayload(), WebSocketReq.class);
+            webSocketReq.setSender(userId); // Add userId to the message
 
-            MessageHandler handler = messageHandlerFactory.getHandler(webSocketMessage.getType());
-            handler.handleMessage(gameId, webSocketMessage);
+            MessageHandler handler = messageHandlerFactory.getHandler(webSocketReq.getType());
+            handler.handleMessage(gameId, webSocketReq);
 
         } catch (Exception e) {
             log.error("Error handling message: {}", e.getMessage());

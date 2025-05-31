@@ -7,10 +7,7 @@ import com.vivekgude.leastcount.util.ResponseUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 import java.util.Optional;
@@ -29,24 +26,36 @@ public class GameController extends BaseController {
     }
 
     @PostMapping("/createGame")
-    public ResponseEntity createGame(@AuthenticationPrincipal CustomUserDetails user, @RequestBody Map<String, String> req) {
+    public ResponseEntity<?> createGame(@AuthenticationPrincipal CustomUserDetails user) {
         //TODO: change the RequestBody to POJO
-        GameDTO gameDetails = gameService.createGame(Long.parseLong(req.get("userId")),
-                req.get("username"));
+        GameDTO gameDetails = gameService.createGame(user.getUserId(), user.getUsername());
 
         return ResponseEntity.ok(ResponseUtil.success(GAME_CREATED, gameDetails));
     }
 
-    @PostMapping("/joinGame")
-    public ResponseEntity joinGame(@AuthenticationPrincipal CustomUserDetails user, @RequestBody Map<String, String> req) {
+    @PostMapping("/joinGame/{gameId}")
+    public ResponseEntity<?> joinGame(@AuthenticationPrincipal CustomUserDetails user,
+            @PathVariable("gameId") String gameId) {
         //TODO: change the RequestBody to POJO
-        Optional<GameDTO> gameDetails = gameService.joinGame(Long.parseLong(req.get("userId")),
-                req.get("username"), req.get("gameId"));
+        Optional<GameDTO> gameDetails = gameService.joinGame(user.getUserId(), user.getUsername(), gameId);
 
         if (gameDetails.isPresent()) {
             return ResponseEntity.ok(ResponseUtil.success(JOINED_GAME, gameDetails));
         } else {
-            return ResponseEntity.ok(ResponseUtil.error(JOINED_GAME_FAILED));
+            return ResponseEntity.ok(ResponseUtil.error(JOIN_GAME_FAILED));
+        }
+    }
+
+    @PostMapping("/exitGame/{gameId}")
+    public ResponseEntity<?> exitGame(@AuthenticationPrincipal CustomUserDetails user,
+            @PathVariable("gameId") String gameId) {
+        //TODO: change the RequestBody to POJO
+        boolean isSuccess = gameService.exitGame(user.getUserId(), user.getUsername(), gameId);
+
+        if (isSuccess) {
+            return ResponseEntity.ok(ResponseUtil.success(EXITED_GAME, null));
+        } else {
+            return ResponseEntity.ok(ResponseUtil.error(EXIT_GAME_FAILED));
         }
     }
 

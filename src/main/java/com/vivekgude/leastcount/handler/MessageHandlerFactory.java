@@ -1,6 +1,5 @@
 package com.vivekgude.leastcount.handler;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
@@ -12,7 +11,6 @@ public class MessageHandlerFactory {
 
     private final Map<String, MessageHandler> handlerMap = new HashMap<>();
 
-    @Autowired
     public MessageHandlerFactory(List<MessageHandler> handlers) {
         for (MessageHandler handler : handlers) {
             handlerMap.put(handler.getMessageType(), handler);

@@ -3,7 +3,6 @@ package com.vivekgude.leastcount.config;
 import com.vivekgude.leastcount.security.CustomUserDetails;
 import com.vivekgude.leastcount.security.JWTUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.http.server.ServletServerHttpRequest;
@@ -15,7 +14,6 @@ import org.springframework.web.socket.server.HandshakeInterceptor;
 
 import java.util.Map;
 
-import static com.vivekgude.leastcount.constants.AuthConstants.*;
 import static com.vivekgude.leastcount.constants.Constants.*;
 
 @Component
@@ -25,7 +23,6 @@ public class WebSocketAuthInterceptor implements HandshakeInterceptor {
     private final JWTUtils jwtUtils;
     private final UserDetailsService userDetailsService;
 
-    @Autowired
     public WebSocketAuthInterceptor(JWTUtils jwtUtils, UserDetailsService userDetailsService) {
         this.jwtUtils = jwtUtils;
         this.userDetailsService = userDetailsService;

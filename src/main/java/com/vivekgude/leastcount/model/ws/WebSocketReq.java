@@ -10,5 +10,7 @@ import lombok.NoArgsConstructor;
 public class WebSocketReq {
     private String type;
     private String content;
-    private long sender;
+    private long userId;
+    private String username;
+    private String gameId;
 } 

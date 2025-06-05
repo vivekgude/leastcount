@@ -13,21 +13,23 @@ import static com.vivekgude.leastcount.constants.MessageType.*;
 public class ChatMessageHandler implements MessageHandler {
 
     @Override
-    public void handleMessage(String gameId, WebSocketReq message) {
+    public void handleMessage(WebSocketReq message) {
         try {
-            log.info("Handling chat message from {}: {}", message.getSender(), message.getContent());
+            String gameId = message.getGameId();
+
+            log.info("Handling chat message from {}: {}", message.getUserId(), message.getContent());
 
             String processedContent = "Processed: " + message.getContent();
 
             // Create a response message
-            WebSocketRes response = new WebSocketRes(CHAT, processedContent, message.getSender());
+            WebSocketRes response = new WebSocketRes(CHAT, processedContent, message.getUserId());
 
             // Send the response back to the client
             WebSocketUtil.sendMessage(gameId, response);
 
             // You can also broadcast to all clients in the same game
-            WebSocketRes broadcast = new WebSocketRes(CHAT, processedContent, message.getSender());
-            WebSocketUtil.broadcastToGame(gameId, broadcast);
+//            WebSocketRes broadcast = new WebSocketRes(CHAT, processedContent, message.getUserId());
+//            WebSocketUtil.broadcastToGame(gameId, broadcast);
 
         } catch (Exception e) {
             log.error("Error sending chat message: {}", e.getMessage());
@@ -36,6 +38,6 @@ public class ChatMessageHandler implements MessageHandler {
 
     @Override
     public String getMessageType() {
-        return "chat";
+        return "chatreq";
     }
 } 

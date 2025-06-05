@@ -65,10 +65,12 @@ public class WebSocketHandler extends TextWebSocketHandler {
             log.info("Received message for gameId:{} userId:{} username:{} message:{}", gameId, userId, username, message.getPayload());
 
             WebSocketReq webSocketReq = gson.fromJson(message.getPayload(), WebSocketReq.class);
-            webSocketReq.setSender(userId); // Add userId to the message
+            webSocketReq.setUserId(userId); // Add userId to the message
+            webSocketReq.setUsername(username); // Add username to the message
+            webSocketReq.setGameId(gameId); // Add gameId to the message
 
             MessageHandler handler = messageHandlerFactory.getHandler(webSocketReq.getType());
-            handler.handleMessage(gameId, webSocketReq);
+            handler.handleMessage(webSocketReq);
 
         } catch (Exception e) {
             log.error("Error handling message: {}", e.getMessage());

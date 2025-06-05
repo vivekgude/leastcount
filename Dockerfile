@@ -1,11 +1,16 @@
-# Use distroless Java image
-FROM gcr.io/distroless/java:21-debian12
-
-# Set the working directory inside the container
+# Build stage
+FROM eclipse-temurin:21-jdk-alpine AS builder
 WORKDIR /app
-
-# Copy the jar file into the container
 COPY target/*.jar app.jar
+
+# Run stage
+FROM eclipse-temurin:21-jre-alpine
+WORKDIR /app
+COPY --from=builder /app/app.jar .
+
+# Create a non-root user
+RUN addgroup -S spring && adduser -S spring -G spring
+USER spring:spring
 
 # Run the jar file
 ENTRYPOINT ["java", "-jar", "app.jar"]

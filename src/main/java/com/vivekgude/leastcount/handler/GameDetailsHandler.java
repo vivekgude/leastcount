@@ -43,13 +43,11 @@ public class GameDetailsHandler implements MessageHandler {
             long currentPlayer = 0;
             long moveTime = 0;
             if (gameState == GameState.INPROGRESS.getType()) {
-                //TODO
-                // currentPlayer = getCurrentPlayer;
-                // moveTime = getMoveTime;
+                currentPlayer = gameCache.getCurrentPlayer(gameId);
+                moveTime = gameCache.getMoveTime(gameId);
             }
 
-            GameDetailsRes gameDetailsRes = new GameDetailsRes(gameState, playersDetails, currentPlayer,
-                    moveTime);
+            GameDetailsRes gameDetailsRes = new GameDetailsRes(gameState, playersDetails, currentPlayer, moveTime);
 
             WebSocketUtil.sendMessage(gameId, gameDetailsRes);
         } catch (Exception e) {

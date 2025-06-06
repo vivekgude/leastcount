@@ -12,7 +12,9 @@ public class GameCache extends BaseCache {
 
     public static final String STATE = "state";
     public static final String HOST = "host";
-    public static final String HOST_NAME = "host_name";
+    public static final String HOST_NAME = "hostName";
+    public static final String CURRENT_PLAYER = "currentPlayer";
+    public static final String MOVE_TIME = "moveTime";
 
     public Map<String, String> getGameDetails(String gameId) {
         String gameIdKey = GAME + gameId;
@@ -36,4 +38,13 @@ public class GameCache extends BaseCache {
                 Collections.emptyList();
     }
 
+    public long getCurrentPlayer(String gameId) {
+        String currentPlayer = getFieldInMap(GAME + gameId, CURRENT_PLAYER);
+        return currentPlayer != null ? Long.parseLong(currentPlayer) : 0;
+    }
+
+    public long getMoveTime(String gameId) {
+        String moveTime = getFieldInMap(GAME + gameId, MOVE_TIME);
+        return moveTime != null ? Long.parseLong(moveTime) : 0;
+    }
 }

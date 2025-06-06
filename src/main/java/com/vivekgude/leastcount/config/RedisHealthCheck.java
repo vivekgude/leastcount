@@ -5,6 +5,8 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import redis.clients.jedis.JedisPool;
 
+import static com.vivekgude.leastcount.constants.Constants.PONG;
+
 @Component
 @Slf4j
 public class RedisHealthCheck implements CommandLineRunner {
@@ -19,7 +21,7 @@ public class RedisHealthCheck implements CommandLineRunner {
     public void run(String... args) {
         try (var jedis = jedisPool.getResource()) {
             String pong = jedis.ping();
-            if ("PONG".equals(pong)) {
+            if (PONG.equals(pong)) {
                 log.info("Successfully connected to Redis server");
             } else {
                 log.error("Failed to connect to Redis server");

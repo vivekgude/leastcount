@@ -64,6 +64,7 @@ public class GameServiceImpl implements GameService {
         }
     }
 
+    @Override
     public boolean exitGame(long userId, String userName, String gameId) {
         int gameState = gameCache.getGameState(gameId);
         if (gameState == GameState.WAITING.getType()) {

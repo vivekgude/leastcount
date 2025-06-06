@@ -8,6 +8,7 @@ import com.vivekgude.leastcount.redis.GameCache;
 import com.vivekgude.leastcount.redis.PlayerCache;
 import com.vivekgude.leastcount.util.WebSocketUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,6 +16,7 @@ import java.util.List;
 import static com.vivekgude.leastcount.redis.GameCache.*;
 import static com.vivekgude.leastcount.redis.PlayerCache.*;
 
+@Component
 @Slf4j
 public class GameDetailsHandler implements MessageHandler {
 

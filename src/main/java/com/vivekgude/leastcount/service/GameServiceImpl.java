@@ -41,7 +41,7 @@ public class GameServiceImpl implements GameService {
         gameCache.addFieldToMap(GAME + gameId, HOST, String.valueOf(userId));
         gameCache.addFieldToMap(GAME + gameId, HOST_NAME, userName);
         gameCache.addValuesInSet(JOINED_PLAYERS + gameId, String.valueOf(userId));
-        playerCache.addFieldToMap(PLAYER + userId + ":" + GAME + gameId, PLAYER_NAME, userName);
+        playerCache.addPlayerName(gameId, userId, userName);
         UserDataDTO userDataDTO = new UserDataDTO(userId, userName);
         return new GameDTO(gameId, userDataDTO, Collections.singletonList(userDataDTO));
     }
@@ -56,13 +56,13 @@ public class GameServiceImpl implements GameService {
             if (!joinedPlayers.contains(userId)) {
                 // Add player to game
                 gameCache.addValuesInSet(JOINED_PLAYERS + gameId, String.valueOf(userId));
-                playerCache.addFieldToMap(PLAYER + userId + ":" + GAME + gameId, PLAYER_NAME, userName);
+                playerCache.addPlayerName(gameId, userId, userName);
                 
                 // Get updated player list for response
                 List<Long> updatedPlayers = gameCache.getJoinedPlayers(gameId);
                 List<UserDataDTO> playersDetails = new ArrayList<>();
                 for (long playerId : updatedPlayers) {
-                    String playerName = playerCache.getFieldInMap(PLAYER + playerId + ":" + GAME + gameId, PLAYER_NAME);
+                    String playerName = playerCache.getPlayerName(gameId, playerId);
                     playersDetails.add(new UserDataDTO(playerId, playerName));
                 }
                 
@@ -110,7 +110,7 @@ public class GameServiceImpl implements GameService {
                     List<Long> updatedPlayers = gameCache.getJoinedPlayers(gameId);
                     List<UserDataDTO> playersDetails = new ArrayList<>();
                     for (long playerId : updatedPlayers) {
-                        String playerName = playerCache.getFieldInMap(PLAYER + playerId + ":" + GAME + gameId, PLAYER_NAME);
+                        String playerName = playerCache.getPlayerName(gameId, playerId);
                         playersDetails.add(new UserDataDTO(playerId, playerName));
                     }
                     

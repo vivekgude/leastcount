@@ -38,7 +38,7 @@ public class GameDetailsHandler implements MessageHandler {
             List<Long> joinedPlayers = gameCache.getJoinedPlayers(gameId);
             List<UserDataDTO> playersDetails = new ArrayList<>();
             for (long playerId : joinedPlayers) {
-                String playerName = playerCache.getFieldInMap(PLAYER + playerId, PLAYER_NAME);
+                String playerName = playerCache.getPlayerName(gameId, playerId);
                 playersDetails.add(new UserDataDTO(playerId, playerName));
             }
 

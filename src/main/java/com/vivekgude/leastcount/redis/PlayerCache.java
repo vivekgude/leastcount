@@ -30,9 +30,14 @@ public class PlayerCache extends BaseCache {
         deleteKeys(playerGameIdKey);
     }
 
-    public String getPlayerName(String gameId, String playerId) {
+    public String getPlayerName(String gameId, long playerId) {
         String playerKey = PLAYER + playerId + ":" + GAME + gameId;
         return getFieldInMap(playerKey, PLAYER_NAME);
+    }
+
+    public void addPlayerName(String gameId, long playerId, String playerName) {
+        String playerKey = PLAYER + playerId + ":" + GAME + gameId;
+        addFieldToMap(playerKey, PLAYER_NAME, playerName);
     }
 
 }

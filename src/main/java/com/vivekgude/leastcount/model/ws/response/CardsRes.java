@@ -6,12 +6,14 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class GameStartRes extends WebSocketRes {
-    private int gameState;
-    private long currentPlayer;
-    private long moveTime;
+public class CardsRes extends WebSocketRes {
+    private String gameId;
+    private List<String> cards;
+    private int totalCards;
 } 

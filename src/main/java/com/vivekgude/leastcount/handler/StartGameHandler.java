@@ -5,6 +5,7 @@ import com.vivekgude.leastcount.job.InitialPlayerMoveJob;
 import com.vivekgude.leastcount.job.JobSchedulerService;
 import com.vivekgude.leastcount.job.TurnTimerJob;
 import com.vivekgude.leastcount.model.ws.WebSocketReq;
+import com.vivekgude.leastcount.model.ws.response.CardsRes;
 import com.vivekgude.leastcount.model.ws.response.GameStartRes;
 import com.vivekgude.leastcount.redis.GameCache;
 import com.vivekgude.leastcount.redis.PlayerCache;
@@ -42,28 +43,53 @@ public class StartGameHandler implements MessageHandler {
             String gameId = message.getGameId();
             long userId = message.getUserId();
 
+            if (gameId == null || gameId.trim().isEmpty()) {
+                log.error("Game start request rejected: Invalid game ID");
+                return;
+            }
+
             // Check if user is host and game is in waiting state
             String hostId = gameCache.getFieldInMap(GAME + gameId, HOST);
             int gameState = gameCache.getGameState(gameId);
 
-            if (!String.valueOf(userId).equals(hostId) || gameState != GameState.WAITING.getType()) {
-                log.warn("Game start request rejected. User: {}, Game: {}, State: {}", userId, gameId,
-                        gameState);
+//            if (hostId == null) {
+//                log.error("Game start request rejected: Game {} not found", gameId);
+//                return;
+//            }
+//
+//            if (!String.valueOf(userId).equals(hostId)) {
+//                log.warn("Game start request rejected: User {} is not host of game {}", userId, gameId);
+//                return;
+//            }
+
+            if (gameState != GameState.WAITING.getType()) {
+                log.debug("Game start request rejected: Game {} is not in waiting state. Current state: {}", gameId, gameState);
                 return;
             }
 
+            // Get all players in the game
+            List<Long> players = gameCache.getJoinedPlayers(gameId);
+
             // Generate and distribute cards
             List<String> deck = Utils.generateShuffledDecks(DECK_SIZE);
-            List<Long> players = gameCache.getJoinedPlayers(gameId);
+            log.info("Generated deck for game {}: {} cards", gameId, deck.size());
             
             // Distribute cards to players
             int cardsPerPlayer = deck.size() / players.size();
+            log.info("Distributing {} cards per player for game {}", cardsPerPlayer, gameId);
+            
             for (int i = 0; i < players.size(); i++) {
-                List<String> playerCards = deck.subList(i * cardsPerPlayer, (i + 1) * cardsPerPlayer);
-                playerCache.setPlayerCards(gameId, String.valueOf(players.get(i)), playerCards);
+                long playerId = players.get(i);
+                int startIndex = i * cardsPerPlayer;
+                int endIndex = (i + 1) * cardsPerPlayer;
+                List<String> playerCards = deck.subList(startIndex, endIndex);
+                
+                // Store cards in cache
+                playerCache.setPlayerCards(gameId, String.valueOf(playerId), playerCards);
+                log.info("Assigned {} cards to player {} in game {}", playerCards.size(), playerId, gameId);
             }
 
-            // Update game state
+            // Update game state to INPROGRESS
             gameCache.addFieldToMap(GAME + gameId, STATE, String.valueOf(GameState.INPROGRESS.getType()));
             
             // Set first player's turn
@@ -74,9 +100,29 @@ public class StartGameHandler implements MessageHandler {
             long moveTime = System.currentTimeMillis() + MOVE_TIME_MS;
             gameCache.addFieldToMap(GAME + gameId, MOVE_TIME, String.valueOf(moveTime));
 
-            // Send game start response immediately
+            // Send game start response to all players
             GameStartRes gameStartRes = new GameStartRes(GameState.INPROGRESS.getType(), firstPlayer, moveTime);
+            gameStartRes.setType("gamestartres");
             WebSocketUtil.broadcastToGame(gameId, gameStartRes);
+
+            // Send individual card responses to each player
+            for (Long playerId : players) {
+                List<String> playerCards = playerCache.getPlayerCards(gameId, String.valueOf(playerId));
+                if (playerCards != null && !playerCards.isEmpty()) {
+                    CardsRes cardsRes = new CardsRes();
+                    cardsRes.setType("cardsres");
+                    cardsRes.setGameId(gameId);
+                    cardsRes.setCards(playerCards);
+                    cardsRes.setTotalCards(playerCards.size());
+                    cardsRes.setReceiver(playerId);
+                    
+                    // Send cards to this specific player
+                    WebSocketUtil.sendMessage(gameId, cardsRes);
+                    log.info("Sent {} cards to player {} in game {}", playerCards.size(), playerId, gameId);
+                } else {
+                    log.error("Failed to retrieve cards for player {} in game {}", playerId, gameId);
+                }
+            }
 
             // Schedule turn timer job
             Map<String, Object> jobData = new HashMap<>();
@@ -90,8 +136,10 @@ public class StartGameHandler implements MessageHandler {
             jobSchedulerService.scheduleOneTimeJob("initialPlayerMove_" + gameId, InitialPlayerMoveJob.class,
                     new Date(System.currentTimeMillis() + 5000), initialMoveData);
 
+            log.info("Game {} started successfully with {} players", gameId, players.size());
+
         } catch (Exception e) {
-            log.error("Error starting game: {}", e.getMessage());
+            log.error("Error starting game: {}", e.getMessage(), e);
         }
     }
 

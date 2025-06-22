@@ -3,12 +3,16 @@ package com.vivekgude.leastcount.service;
 import com.vivekgude.leastcount.enums.GameState;
 import com.vivekgude.leastcount.model.dto.GameDTO;
 import com.vivekgude.leastcount.model.dto.UserDataDTO;
+import com.vivekgude.leastcount.model.ws.response.GameDetailsRes;
 import com.vivekgude.leastcount.redis.GameCache;
 import com.vivekgude.leastcount.redis.PlayerCache;
 import com.vivekgude.leastcount.util.Utils;
+import com.vivekgude.leastcount.util.WebSocketUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -17,11 +21,11 @@ import static com.vivekgude.leastcount.constants.Constants.*;
 import static com.vivekgude.leastcount.redis.GameCache.*;
 import static com.vivekgude.leastcount.redis.PlayerCache.*;
 
+@Slf4j
 @Service
 public class GameServiceImpl implements GameService {
 
     private final GameCache gameCache;
-
     private final PlayerCache playerCache;
 
     public GameServiceImpl(GameCache gameCache, PlayerCache playerCache) {
@@ -50,13 +54,40 @@ public class GameServiceImpl implements GameService {
         } else if (gameState == GameState.WAITING.getType()) {
             List<Long> joinedPlayers = gameCache.getJoinedPlayers(gameId);
             if (!joinedPlayers.contains(userId)) {
+                // Add player to game
                 gameCache.addValuesInSet(JOINED_PLAYERS + gameId, String.valueOf(userId));
                 playerCache.addFieldToMap(PLAYER + userId + ":" + GAME + gameId, PLAYER_NAME, userName);
+                
+                // Get updated player list for response
+                List<Long> updatedPlayers = gameCache.getJoinedPlayers(gameId);
+                List<UserDataDTO> playersDetails = new ArrayList<>();
+                for (long playerId : updatedPlayers) {
+                    String playerName = playerCache.getFieldInMap(PLAYER + playerId + ":" + GAME + gameId, PLAYER_NAME);
+                    playersDetails.add(new UserDataDTO(playerId, playerName));
+                }
+                
+                // Create response DTO
                 long host = Long.parseLong(gameCache.getFieldInMap(GAME + gameId, HOST));
                 String hostName = gameCache.getFieldInMap(GAME + gameId, HOST_NAME);
-//                List<Long> joinedPlayers = gameCache.getJoinedPlayers(gameId);
                 UserDataDTO userDataDTO = new UserDataDTO(host, hostName);
-                return Optional.of(new GameDTO(gameId, userDataDTO, Collections.singletonList(userDataDTO)));
+                GameDTO gameDTO = new GameDTO(gameId, userDataDTO, playersDetails);
+                
+                // Broadcast updated game details to all players
+                try {
+                    GameDetailsRes gameDetailsRes = new GameDetailsRes();
+                    gameDetailsRes.setType("gamedetailsres");
+                    gameDetailsRes.setGameState(gameState);
+                    gameDetailsRes.setPlayers(playersDetails);
+                    gameDetailsRes.setCurrentPlayer(0); // No current player in waiting state
+                    gameDetailsRes.setMoveTime(0); // No move time in waiting state
+                    
+                    WebSocketUtil.broadcastToGame(gameId, gameDetailsRes);
+                    log.info("Broadcasted game details after player {} joined game {}", userName, gameId);
+                } catch (Exception e) {
+                    log.error("Failed to broadcast game details after player join: {}", e.getMessage(), e);
+                }
+                
+                return Optional.of(gameDTO);
             }
             return Optional.empty();
         } else {
@@ -70,8 +101,32 @@ public class GameServiceImpl implements GameService {
         if (gameState == GameState.WAITING.getType()) {
             List<Long> joinedPlayers = gameCache.getJoinedPlayers(gameId);
             if (joinedPlayers.contains(userId)) {
+                // Remove player from game
                 gameCache.removeValuesInSet(JOINED_PLAYERS + gameId, String.valueOf(userId));
                 playerCache.deleteKeys(PLAYER + userId + ":" + GAME + gameId);
+                
+                // Broadcast updated game details after player exit
+                try {
+                    List<Long> updatedPlayers = gameCache.getJoinedPlayers(gameId);
+                    List<UserDataDTO> playersDetails = new ArrayList<>();
+                    for (long playerId : updatedPlayers) {
+                        String playerName = playerCache.getFieldInMap(PLAYER + playerId + ":" + GAME + gameId, PLAYER_NAME);
+                        playersDetails.add(new UserDataDTO(playerId, playerName));
+                    }
+                    
+                    GameDetailsRes gameDetailsRes = new GameDetailsRes();
+                    gameDetailsRes.setType("gamedetailsres");
+                    gameDetailsRes.setGameState(gameState);
+                    gameDetailsRes.setPlayers(playersDetails);
+                    gameDetailsRes.setCurrentPlayer(0);
+                    gameDetailsRes.setMoveTime(0);
+                    
+                    WebSocketUtil.broadcastToGame(gameId, gameDetailsRes);
+                    log.info("Broadcasted game details after player {} exited game {}", userName, gameId);
+                } catch (Exception e) {
+                    log.error("Failed to broadcast game details after player exit: {}", e.getMessage(), e);
+                }
+                
                 return true;
             }
         }

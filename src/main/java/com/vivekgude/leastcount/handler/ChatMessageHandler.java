@@ -25,7 +25,7 @@ public class ChatMessageHandler implements MessageHandler {
             WebSocketRes response = new WebSocketRes(CHAT, processedContent, message.getUserId());
 
             // Send the response back to the client
-            WebSocketUtil.sendMessage(gameId, response);
+            WebSocketUtil.sendMessage(gameId, message.getUserId(), response);
 
             // You can also broadcast to all clients in the same game
 //            WebSocketRes broadcast = new WebSocketRes(CHAT, processedContent, message.getUserId());

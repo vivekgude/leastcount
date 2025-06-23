@@ -32,7 +32,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
         
         if (gameId != null && userId != 0) {
 
-            WebSocketUtil.addSession(gameId, session);
+            WebSocketUtil.addSession(gameId, userId, session);
             log.info("New WebSocket connection established for gameId:{} userId:{} username:{}", gameId, userId, username);
         } else {
             log.debug("Connection rejected: Missing gameId or userId");
@@ -50,7 +50,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
         long userId = (Long) session.getAttributes().get(USERID);
         
         if (gameId != null) {
-            WebSocketUtil.removeSession(gameId);
+            WebSocketUtil.removeSession(gameId, userId);
             log.info("WebSocket connection closed for gameId:{} userId:{} status:{}", gameId, userId, status);
         }
     }

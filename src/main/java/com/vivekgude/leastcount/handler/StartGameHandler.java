@@ -117,7 +117,7 @@ public class StartGameHandler implements MessageHandler {
                     cardsRes.setReceiver(playerId);
                     
                     // Send cards to this specific player
-                    WebSocketUtil.sendMessage(gameId, cardsRes);
+                    WebSocketUtil.sendMessage(gameId, playerId, cardsRes);
                     log.info("Sent {} cards to player {} in game {}", playerCards.size(), playerId, gameId);
                 } else {
                     log.error("Failed to retrieve cards for player {} in game {}", playerId, gameId);

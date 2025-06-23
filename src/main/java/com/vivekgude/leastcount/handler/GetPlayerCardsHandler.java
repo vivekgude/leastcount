@@ -63,7 +63,7 @@ public class GetPlayerCardsHandler implements MessageHandler {
             cardsRes.setTotalCards(playerCards.size());
             cardsRes.setReceiver(userId);
 
-            WebSocketUtil.sendMessage(gameId, cardsRes);
+            WebSocketUtil.sendMessage(gameId, userId, cardsRes);
             log.info("Sent {} cards to player {} in game {}", playerCards.size(), userId, gameId);
 
         } catch (Exception e) {

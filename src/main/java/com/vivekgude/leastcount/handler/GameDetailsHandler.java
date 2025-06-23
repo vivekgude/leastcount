@@ -51,7 +51,7 @@ public class GameDetailsHandler implements MessageHandler {
 
             GameDetailsRes gameDetailsRes = new GameDetailsRes(gameState, playersDetails, currentPlayer, moveTime);
 
-            WebSocketUtil.sendMessage(gameId, gameDetailsRes);
+            WebSocketUtil.sendMessage(gameId, userId, gameDetailsRes);
         } catch (Exception e) {
             log.error("Error sending game details: {}", e.getMessage());
         }

@@ -3,6 +3,7 @@ package com.vivekgude.leastcount.handler;
 import com.vivekgude.leastcount.enums.GameState;
 import com.vivekgude.leastcount.model.dto.UserDataDTO;
 import com.vivekgude.leastcount.model.ws.WebSocketReq;
+import com.vivekgude.leastcount.model.ws.response.CardsRes;
 import com.vivekgude.leastcount.model.ws.response.GameDetailsRes;
 import com.vivekgude.leastcount.redis.GameCache;
 import com.vivekgude.leastcount.redis.PlayerCache;
@@ -57,6 +58,21 @@ public class GameDetailsHandler implements MessageHandler {
             GameDetailsRes gameDetailsRes = new GameDetailsRes(gameState, hostData, playersDetails, currentPlayer, moveTime);
 
             WebSocketUtil.sendMessage(gameId, userId, gameDetailsRes);
+
+            // If game is in progress, also send player's cards
+            if (gameState == GameState.INPROGRESS.getType()) {
+                List<String> playerCards = playerCache.getPlayerCards(gameId, String.valueOf(userId));
+                if (playerCards != null && !playerCards.isEmpty()) {
+                    CardsRes cardsRes = new CardsRes();
+                    cardsRes.setType("cardsres");
+                    cardsRes.setGameId(gameId);
+                    cardsRes.setCards(playerCards);
+                    cardsRes.setReceiver(userId);
+
+                    WebSocketUtil.sendMessage(gameId, userId, cardsRes);
+                }
+            }
+
         } catch (Exception e) {
             log.error("Error sending game details: {}", e.getMessage());
         }

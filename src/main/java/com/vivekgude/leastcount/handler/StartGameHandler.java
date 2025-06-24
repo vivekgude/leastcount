@@ -74,14 +74,14 @@ public class StartGameHandler implements MessageHandler {
             List<String> deck = Utils.generateShuffledDecks(DECK_SIZE);
             log.info("Generated deck for game {}: {} cards", gameId, deck.size());
             
-            // Distribute cards to players
-            int cardsPerPlayer = deck.size() / players.size();
+            // Distribute cards to each player
+            int cardsPerPlayer = CARDS_PER_PLAYER;
             log.info("Distributing {} cards per player for game {}", cardsPerPlayer, gameId);
             
             for (int i = 0; i < players.size(); i++) {
                 long playerId = players.get(i);
                 int startIndex = i * cardsPerPlayer;
-                int endIndex = (i + 1) * cardsPerPlayer;
+                int endIndex = startIndex + cardsPerPlayer;
                 List<String> playerCards = deck.subList(startIndex, endIndex);
                 
                 // Store cards in cache
@@ -113,7 +113,6 @@ public class StartGameHandler implements MessageHandler {
                     cardsRes.setType("cardsres");
                     cardsRes.setGameId(gameId);
                     cardsRes.setCards(playerCards);
-                    cardsRes.setTotalCards(playerCards.size());
                     cardsRes.setReceiver(playerId);
                     
                     // Send cards to this specific player

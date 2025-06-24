@@ -15,5 +15,4 @@ import java.util.List;
 public class CardsRes extends WebSocketRes {
     private String gameId;
     private List<String> cards;
-    private int totalCards;
 } 

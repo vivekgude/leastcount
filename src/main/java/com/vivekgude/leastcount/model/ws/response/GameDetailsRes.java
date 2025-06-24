@@ -13,6 +13,7 @@ import java.util.List;
 @AllArgsConstructor
 public class GameDetailsRes extends WebSocketRes {
     private int gameState;
+    private UserDataDTO host;
     private List<UserDataDTO> players;
     private long currentPlayer;
     private long moveTime;

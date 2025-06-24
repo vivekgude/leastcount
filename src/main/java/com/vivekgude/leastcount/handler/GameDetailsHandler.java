@@ -49,7 +49,12 @@ public class GameDetailsHandler implements MessageHandler {
                 moveTime = gameCache.getMoveTime(gameId);
             }
 
-            GameDetailsRes gameDetailsRes = new GameDetailsRes(gameState, playersDetails, currentPlayer, moveTime);
+            // Get host information
+            long hostId = Long.parseLong(gameCache.getFieldInMap(GAME + gameId, HOST));
+            String hostName = gameCache.getFieldInMap(GAME + gameId, HOST_NAME);
+            UserDataDTO hostData = new UserDataDTO(hostId, hostName);
+
+            GameDetailsRes gameDetailsRes = new GameDetailsRes(gameState, hostData, playersDetails, currentPlayer, moveTime);
 
             WebSocketUtil.sendMessage(gameId, userId, gameDetailsRes);
         } catch (Exception e) {

@@ -77,6 +77,7 @@ public class GameServiceImpl implements GameService {
                     GameDetailsRes gameDetailsRes = new GameDetailsRes();
                     gameDetailsRes.setType("gamedetailsres");
                     gameDetailsRes.setGameState(gameState);
+                    gameDetailsRes.setHost(userDataDTO);
                     gameDetailsRes.setPlayers(playersDetails);
                     gameDetailsRes.setCurrentPlayer(0); // No current player in waiting state
                     gameDetailsRes.setMoveTime(0); // No move time in waiting state
@@ -114,9 +115,15 @@ public class GameServiceImpl implements GameService {
                         playersDetails.add(new UserDataDTO(playerId, playerName));
                     }
                     
+                    // Get host information
+                    long hostId = Long.parseLong(gameCache.getFieldInMap(GAME + gameId, HOST));
+                    String hostName = gameCache.getFieldInMap(GAME + gameId, HOST_NAME);
+                    UserDataDTO hostData = new UserDataDTO(hostId, hostName);
+                    
                     GameDetailsRes gameDetailsRes = new GameDetailsRes();
                     gameDetailsRes.setType("gamedetailsres");
                     gameDetailsRes.setGameState(gameState);
+                    gameDetailsRes.setHost(hostData);
                     gameDetailsRes.setPlayers(playersDetails);
                     gameDetailsRes.setCurrentPlayer(0);
                     gameDetailsRes.setMoveTime(0);

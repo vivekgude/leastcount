@@ -35,7 +35,7 @@ public class GameCache extends BaseCache {
         List<String> joinedPlayers = getValuesInSet(JOINED_PLAYERS + gameId);
         if (joinedPlayers != null) {
             List<Long> players = joinedPlayers.stream().map(Long::parseLong).collect(Collectors.toList());
-            Collections.reverse(players);
+//            Collections.reverse(players);
             return players;
         }
         return Collections.emptyList();

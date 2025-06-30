@@ -7,6 +7,8 @@ import com.vivekgude.leastcount.job.TurnTimerJob;
 import com.vivekgude.leastcount.model.ws.WebSocketReq;
 import com.vivekgude.leastcount.model.ws.response.CardsRes;
 import com.vivekgude.leastcount.model.ws.response.GameStartRes;
+import com.vivekgude.leastcount.model.ws.response.Score;
+import com.vivekgude.leastcount.model.ws.response.ScoreRes;
 import com.vivekgude.leastcount.redis.GameCache;
 import com.vivekgude.leastcount.redis.PlayerCache;
 import com.vivekgude.leastcount.util.Utils;
@@ -14,10 +16,7 @@ import com.vivekgude.leastcount.util.WebSocketUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.vivekgude.leastcount.constants.Constants.*;
 import static com.vivekgude.leastcount.redis.GameCache.*;
@@ -86,7 +85,12 @@ public class StartGameHandler implements MessageHandler {
                 
                 // Store cards in cache
                 playerCache.setPlayerCards(gameId, String.valueOf(playerId), playerCards);
-                log.info("Assigned {} cards to player {} in game {}", playerCards.size(), playerId, gameId);
+                
+                // Initialize player score to 0
+                playerCache.initializePlayerScore(gameId, String.valueOf(playerId));
+
+                log.info("Assigned {} cards to player {} in game {} and initialized score to 0", playerCards,
+                        playerId, gameId);
             }
 
             // Update game state to INPROGRESS
@@ -105,6 +109,8 @@ public class StartGameHandler implements MessageHandler {
             gameStartRes.setType("gamestartres");
             WebSocketUtil.broadcastToGame(gameId, gameStartRes);
 
+            List<Score> scores = new ArrayList<>();
+
             // Send individual card responses to each player
             for (Long playerId : players) {
                 List<String> playerCards = playerCache.getPlayerCards(gameId, String.valueOf(playerId));
@@ -118,10 +124,14 @@ public class StartGameHandler implements MessageHandler {
                     // Send cards to this specific player
                     WebSocketUtil.sendMessage(gameId, playerId, cardsRes);
                     log.info("Sent {} cards to player {} in game {}", playerCards.size(), playerId, gameId);
+                    scores.add(new Score(playerId, 0));
                 } else {
                     log.error("Failed to retrieve cards for player {} in game {}", playerId, gameId);
                 }
             }
+
+            ScoreRes scoreRes = new ScoreRes(scores);
+            WebSocketUtil.broadcastToGame(gameId, scoreRes);
 
             // Schedule turn timer job
             Map<String, Object> jobData = new HashMap<>();

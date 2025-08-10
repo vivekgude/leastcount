@@ -5,6 +5,7 @@ import com.vivekgude.leastcount.model.dto.UserDataDTO;
 import com.vivekgude.leastcount.model.ws.WebSocketReq;
 import com.vivekgude.leastcount.model.ws.response.CardsRes;
 import com.vivekgude.leastcount.model.ws.response.GameDetailsRes;
+import com.vivekgude.leastcount.model.ws.response.StateUpdate;
 import com.vivekgude.leastcount.redis.GameCache;
 import com.vivekgude.leastcount.redis.PlayerCache;
 import com.vivekgude.leastcount.util.WebSocketUtil;
@@ -12,10 +13,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.vivekgude.leastcount.redis.GameCache.*;
-import static com.vivekgude.leastcount.redis.PlayerCache.*;
+// import static com.vivekgude.leastcount.redis.PlayerCache.*; // unused
 
 @Component
 @Slf4j
@@ -58,6 +61,19 @@ public class GameDetailsHandler implements MessageHandler {
             GameDetailsRes gameDetailsRes = new GameDetailsRes(gameState, hostData, playersDetails, currentPlayer, moveTime);
 
             WebSocketUtil.sendMessage(gameId, userId, gameDetailsRes);
+
+            // Also send typed state snapshot extras
+            StateUpdate state = new StateUpdate();
+            state.setType("stateupdate");
+            state.setCurrentPlayer(currentPlayer);
+            state.setMoveTime(moveTime);
+            state.setOpen(gameCache.getOpenPile(gameId));
+            state.setDeckCount(gameCache.getDeckCount(gameId));
+            state.setGameScores(gameCache.getAllGameScores(gameId));
+            state.setEliminated(gameCache.getEliminatedPlayers(gameId));
+            Integer roundNo = gameCache.getRoundNoOrNull(gameId);
+            state.setRoundNo(roundNo == null ? 1 : roundNo);
+            WebSocketUtil.sendMessage(gameId, userId, state);
 
             // If game is in progress, also send player's cards
             if (gameState == GameState.INPROGRESS.getType()) {

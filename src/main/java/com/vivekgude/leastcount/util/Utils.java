@@ -36,4 +36,25 @@ public class Utils {
         return deck;
     }
 
+    public static int computeHandTotal(List<String> cards) {
+        if (cards == null || cards.isEmpty()) return 0;
+        int total = 0;
+        for (String code : cards) {
+            if (code == null || code.isEmpty()) continue;
+            String rankPart = code.substring(0, code.length() - 1);
+            try {
+                int rank = Integer.parseInt(rankPart);
+                total += rank;
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        return total;
+    }
+
+    // Optionally: helper to extract rank string (not used externally)
+    static String extractRank(String code) {
+        if (code == null || code.isEmpty()) return "";
+        return code.substring(0, code.length() - 1);
+    }
+
 }

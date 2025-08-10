@@ -51,15 +51,10 @@ public class StartGameHandler implements MessageHandler {
             String hostId = gameCache.getFieldInMap(GAME + gameId, HOST);
             int gameState = gameCache.getGameState(gameId);
 
-//            if (hostId == null) {
-//                log.error("Game start request rejected: Game {} not found", gameId);
-//                return;
-//            }
-//
-//            if (!String.valueOf(userId).equals(hostId)) {
-//                log.warn("Game start request rejected: User {} is not host of game {}", userId, gameId);
-//                return;
-//            }
+            if (hostId == null || !String.valueOf(userId).equals(hostId)) {
+                log.warn("Game start request rejected: User {} is not host of game {}", userId, gameId);
+                return;
+            }
 
             if (gameState != GameState.WAITING.getType()) {
                 log.debug("Game start request rejected: Game {} is not in waiting state. Current state: {}", gameId, gameState);
@@ -68,20 +63,27 @@ public class StartGameHandler implements MessageHandler {
 
             // Get all players in the game
             List<Long> players = gameCache.getJoinedPlayers(gameId);
+            if (players == null || players.size() < 2) {
+                log.warn("Game start request rejected: Not enough players in game {}", gameId);
+                return;
+            }
 
-            // Generate and distribute cards
+            // Generate and distribute cards from two decks
             List<String> deck = Utils.generateShuffledDecks(DECK_SIZE);
             log.info("Generated deck for game {}: {} cards", gameId, deck.size());
             
             // Distribute cards to each player
-            int cardsPerPlayer = CARDS_PER_PLAYER;
+            int cardsPerPlayer = Optional.ofNullable(gameCache.getCardsPerPlayerOrNull(gameId))
+                    .orElse(DEFAULT_CARDS_PER_PLAYER);
             log.info("Distributing {} cards per player for game {}", cardsPerPlayer, gameId);
             
+            int dealt = 0;
             for (int i = 0; i < players.size(); i++) {
                 long playerId = players.get(i);
-                int startIndex = i * cardsPerPlayer;
+                int startIndex = dealt;
                 int endIndex = startIndex + cardsPerPlayer;
-                List<String> playerCards = deck.subList(startIndex, endIndex);
+                List<String> playerCards = new ArrayList<>(deck.subList(startIndex, endIndex));
+                dealt += cardsPerPlayer;
                 
                 // Store cards in cache
                 playerCache.setPlayerCards(gameId, String.valueOf(playerId), playerCards);
@@ -93,6 +95,14 @@ public class StartGameHandler implements MessageHandler {
                         playerId, gameId);
             }
 
+            // Initialize open pile empty and set remaining deck
+            gameCache.setOpenPile(gameId, Collections.emptyList());
+            if (dealt < deck.size()) {
+                gameCache.setDeck(gameId, new ArrayList<>(deck.subList(dealt, deck.size())));
+            } else {
+                gameCache.setDeck(gameId, Collections.emptyList());
+            }
+
             // Update game state to INPROGRESS
             gameCache.addFieldToMap(GAME + gameId, STATE, String.valueOf(GameState.INPROGRESS.getType()));
             
@@ -100,9 +110,17 @@ public class StartGameHandler implements MessageHandler {
             long firstPlayer = players.get(0);
             gameCache.addFieldToMap(GAME + gameId, CURRENT_PLAYER, String.valueOf(firstPlayer));
             
-            // Set move time (30 seconds)
-            long moveTime = System.currentTimeMillis() + MOVE_TIME_MS;
+            // Set move time (from per-game override or default)
+            long configuredMove = Optional.ofNullable(gameCache.getMoveTimeConfigOrNull(gameId))
+                    .orElse(DEFAULT_MOVE_TIME_MS);
+            long moveTime = System.currentTimeMillis() + configuredMove;
             gameCache.addFieldToMap(GAME + gameId, MOVE_TIME, String.valueOf(moveTime));
+
+            // Increment or initialize round number
+            Integer roundNo = gameCache.getRoundNoOrNull(gameId);
+            if (roundNo == null || roundNo <= 0) {
+                gameCache.setRoundNo(gameId, 1);
+            }
 
             // Send game start response to all players
             GameStartRes gameStartRes = new GameStartRes(GameState.INPROGRESS.getType(), firstPlayer, moveTime);
@@ -139,11 +157,11 @@ public class StartGameHandler implements MessageHandler {
             jobSchedulerService.scheduleOneTimeJob("turnTimer_" + gameId, TurnTimerJob.class,
                     new Date(moveTime), jobData);
 
-            // Schedule initial player move notification after 5 seconds
+            // Schedule initial player move notification after 2 seconds (via stateupdate)
             Map<String, Object> initialMoveData = new HashMap<>();
             initialMoveData.put("gameId", gameId);
             jobSchedulerService.scheduleOneTimeJob("initialPlayerMove_" + gameId, InitialPlayerMoveJob.class,
-                    new Date(System.currentTimeMillis() + 5000), initialMoveData);
+                    new Date(System.currentTimeMillis() + 2000), initialMoveData);
 
             log.info("Game {} started successfully with {} players", gameId, players.size());
 

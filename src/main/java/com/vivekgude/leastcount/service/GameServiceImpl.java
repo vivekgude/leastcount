@@ -2,6 +2,7 @@ package com.vivekgude.leastcount.service;
 
 import com.vivekgude.leastcount.enums.GameState;
 import com.vivekgude.leastcount.model.dto.GameDTO;
+import com.vivekgude.leastcount.model.dto.GameConfig;
 import com.vivekgude.leastcount.model.dto.UserDataDTO;
 import com.vivekgude.leastcount.model.ws.response.GameDetailsRes;
 import com.vivekgude.leastcount.redis.GameCache;
@@ -9,7 +10,6 @@ import com.vivekgude.leastcount.redis.PlayerCache;
 import com.vivekgude.leastcount.util.Utils;
 import com.vivekgude.leastcount.util.WebSocketUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -19,7 +19,6 @@ import java.util.Optional;
 
 import static com.vivekgude.leastcount.constants.Constants.*;
 import static com.vivekgude.leastcount.redis.GameCache.*;
-import static com.vivekgude.leastcount.redis.PlayerCache.*;
 
 @Slf4j
 @Service
@@ -34,14 +33,31 @@ public class GameServiceImpl implements GameService {
     }
 
     @Override
-    public GameDTO createGame(long userId, String userName) {
+    public GameDTO createGame(long userId, String userName, GameConfig overrides) {
         String gameId = Utils.generateString(GAME_ID_SIZE);
-        //        long startTime = System.currentTimeMillis() + 10 * 60 * 1000;
         gameCache.addFieldToMap(GAME + gameId, STATE, GameState.WAITING.toString());
         gameCache.addFieldToMap(GAME + gameId, HOST, String.valueOf(userId));
         gameCache.addFieldToMap(GAME + gameId, HOST_NAME, userName);
         gameCache.addValuesInSet(JOINED_PLAYERS + gameId, String.valueOf(userId));
         playerCache.addPlayerName(gameId, userId, userName);
+
+        // Persist per-game overrides if provided
+        if (overrides != null) {
+            if (overrides.getCardsPerPlayer() != null) {
+                gameCache.addFieldToMap(GAME + gameId, CARDS_PER_PLAYER, String.valueOf(overrides.getCardsPerPlayer()));
+            }
+            if (overrides.getExitScore() != null) {
+                gameCache.addFieldToMap(GAME + gameId, EXIT_SCORE, String.valueOf(overrides.getExitScore()));
+            }
+            if (overrides.getInvalidDeclarationPenalty() != null) {
+                gameCache.addFieldToMap(GAME + gameId, INVALID_PENALTY, String.valueOf(overrides.getInvalidDeclarationPenalty()));
+            }
+            if (overrides.getMoveTimeMs() != null) {
+                gameCache.addFieldToMap(GAME + gameId, MOVE_TIME_CONFIG, String.valueOf(overrides.getMoveTimeMs()));
+            }
+        }
+        // initialize round number for new game
+        gameCache.addFieldToMap(GAME + gameId, ROUND_NO, String.valueOf(1));
         UserDataDTO userDataDTO = new UserDataDTO(userId, userName);
         return new GameDTO(gameId, userDataDTO, Collections.singletonList(userDataDTO));
     }

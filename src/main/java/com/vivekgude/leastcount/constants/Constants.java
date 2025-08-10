@@ -16,7 +16,10 @@ public class Constants {
 
     public static final int GAME_ID_SIZE = 5;
     public static final int DECK_SIZE = 2;
-    public static final int CARDS_PER_PLAYER = 6;
+    public static final int DEFAULT_CARDS_PER_PLAYER = 5; // default cards per player
+    public static final int DEFAULT_EXIT_SCORE = 100;
+    public static final int DEFAULT_INVALID_DECLARATION_PENALTY = 40;
+    public static final long DEFAULT_MOVE_TIME_MS = 30000; // default move timer: 30s
+    public static final long NEXT_ROUND_DELAY_MS = 10000; // auto next-round delay: 10s
 
-    public static final long MOVE_TIME_MS = 30000; // 30 seconds in milliseconds
 }

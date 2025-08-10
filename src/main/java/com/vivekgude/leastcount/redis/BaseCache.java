@@ -104,6 +104,34 @@ public class BaseCache {
         }
     }
 
+    public long removeValuesInList(String key, String value) {
+        try (Jedis jedis = jedisPool.getResource()) {
+            return jedis.lrem(key, 1, value);
+        } catch (Exception e) {
+            log.error("Error removing value in List:{} value:{}", key, value, e);
+            return 0;
+        }
+    }
+
+    public String popFromListTail(String key) {
+        try (Jedis jedis = jedisPool.getResource()) {
+            return jedis.rpop(key);
+        } catch (Exception e) {
+            log.error("Error popping from List tail:{}", key, e);
+            return null;
+        }
+    }
+
+    public int getListSize(String key) {
+        try (Jedis jedis = jedisPool.getResource()) {
+            Long len = jedis.llen(key);
+            return len != null ? len.intValue() : 0;
+        } catch (Exception e) {
+            log.error("Error getting List size:{}", key, e);
+            return 0;
+        }
+    }
+
     public boolean addValuesInSet(String key, String... values) {
         try (Jedis jedis = jedisPool.getResource()) {
             long result = jedis.sadd(key, values);

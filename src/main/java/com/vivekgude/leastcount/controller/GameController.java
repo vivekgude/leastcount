@@ -1,6 +1,7 @@
 package com.vivekgude.leastcount.controller;
 
 import com.vivekgude.leastcount.model.dto.GameDTO;
+import com.vivekgude.leastcount.model.dto.GameConfig;
 import com.vivekgude.leastcount.security.CustomUserDetails;
 import com.vivekgude.leastcount.service.GameService;
 import com.vivekgude.leastcount.util.ResponseUtil;
@@ -9,7 +10,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
 import java.util.Optional;
 
 import static com.vivekgude.leastcount.constants.Constants.*;
@@ -26,9 +26,9 @@ public class GameController extends BaseController {
     }
 
     @PostMapping("/createGame")
-    public ResponseEntity<?> createGame(@AuthenticationPrincipal CustomUserDetails user) {
-        //TODO: change the RequestBody to POJO
-        GameDTO gameDetails = gameService.createGame(user.getUserId(), user.getUsername());
+    public ResponseEntity<?> createGame(@AuthenticationPrincipal CustomUserDetails user,
+            @RequestBody(required = false) GameConfig request) {
+        GameDTO gameDetails = gameService.createGame(user.getUserId(), user.getUsername(), request);
 
         return ResponseEntity.ok(ResponseUtil.success(GAME_CREATED, gameDetails));
     }

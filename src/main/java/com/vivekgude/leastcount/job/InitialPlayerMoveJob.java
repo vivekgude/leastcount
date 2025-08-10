@@ -1,12 +1,13 @@
 package com.vivekgude.leastcount.job;
 
 import com.vivekgude.leastcount.enums.GameState;
-import com.vivekgude.leastcount.model.ws.response.PlayerMove;
 import com.vivekgude.leastcount.redis.GameCache;
 import com.vivekgude.leastcount.util.WebSocketUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.JobExecutionContext;
 import org.springframework.stereotype.Component;
+
+import com.vivekgude.leastcount.model.ws.response.StateUpdate;
 
 @Slf4j
 @Component
@@ -32,8 +33,11 @@ public class InitialPlayerMoveJob extends BaseJob {
         long currentPlayer = gameCache.getCurrentPlayer(gameId);
         long moveTime = gameCache.getMoveTime(gameId);
 
-        // Send initial player move notification
-        PlayerMove playerMove = new PlayerMove(currentPlayer, moveTime);
-        WebSocketUtil.broadcastToGame(gameId, playerMove);
+        // Send initial stateupdate snapshot (typed)
+        StateUpdate state = new StateUpdate();
+        state.setType("stateupdate");
+        state.setCurrentPlayer(currentPlayer);
+        state.setMoveTime(moveTime);
+        WebSocketUtil.broadcastToGame(gameId, state);
     }
 } 

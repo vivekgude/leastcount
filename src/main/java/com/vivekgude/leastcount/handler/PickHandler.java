@@ -90,7 +90,7 @@ public class PickHandler extends AbstractMessageHandler implements MessageHandle
                 }
                 pickedCard = payload.card;
             } else if ("closed".equalsIgnoreCase(payload.source)) {
-                pickedCard = deckService.drawFromClosed(gameId);
+                pickedCard = deckService.drawFromClosedPile(gameId);
                 if (pickedCard == null) {
                     sendError(gameId, userId, "deck_empty", "Closed deck empty");
                     return;
@@ -160,7 +160,7 @@ public class PickHandler extends AbstractMessageHandler implements MessageHandle
             state.setCurrentPlayer(nextPlayer);
             state.setMoveTime(newMoveTime);
             state.setOpen(Optional.ofNullable(gameCache.getOpenPile(gameId)).orElse(List.of()));
-            state.setDeckCount(deckService.getClosedCount(gameId));
+            state.setDeckCount(gameCache.getDeckCount(gameId));
             WebSocketUtil.broadcastToGame(gameId, state);
 
         } catch (Exception e) {

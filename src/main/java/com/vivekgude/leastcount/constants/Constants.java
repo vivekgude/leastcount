@@ -21,5 +21,11 @@ public class Constants {
     public static final int DEFAULT_INVALID_DECLARATION_PENALTY = 40;
     public static final long DEFAULT_MOVE_TIME_MS = 30000; // default move timer: 30s
     public static final long NEXT_ROUND_DELAY_MS = 10000; // auto next-round delay: 10s
+    
+    // Per-game configuration field names
+    public static final String CARDS_PER_PLAYER = "cardsPerPlayer";
+    public static final String EXIT_SCORE = "exitScore";
+    public static final String INVALID_DECLARATION_PENALTY = "invalidDeclarationPenalty";
+    public static final String MOVE_TIME_MS = "moveTimeMs";
 
 }

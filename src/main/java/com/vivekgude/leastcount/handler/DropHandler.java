@@ -7,6 +7,7 @@ import com.vivekgude.leastcount.model.ws.response.DropRes;
 import com.vivekgude.leastcount.model.ws.response.StateUpdate;
 import com.vivekgude.leastcount.redis.GameCache;
 import com.vivekgude.leastcount.redis.PlayerCache;
+import com.vivekgude.leastcount.util.Utils;
 import com.vivekgude.leastcount.util.WebSocketUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -67,13 +68,10 @@ public class DropHandler extends AbstractMessageHandler implements MessageHandle
                 sendError(gameId, userId, "ownership", "You don't own all cards");
                 return;
             }
-            if (!allSameRank(payload.cards)) {
+            if (!Utils.allSameRank(payload.cards)) {
                 sendError(gameId, userId, "invalid_drop", "All dropped cards must be same rank");
                 return;
             }
-
-            // enforce at least one card dropped
-            if (payload.cards.isEmpty()) return;
 
             // Remove from hand and set open pile
             hand.removeAll(payload.cards);
@@ -110,16 +108,6 @@ public class DropHandler extends AbstractMessageHandler implements MessageHandle
         return "dropreq";
     }
 
-    private boolean allSameRank(List<String> cards) {
-        String first = cards.get(0);
-        String rank = first.substring(0, first.length() - 1);
-        for (int i = 1; i < cards.size(); i++) {
-            String r = cards.get(i).substring(0, cards.get(i).length() - 1);
-            if (!rank.equals(r))
-                return false;
-        }
-        return true;
-    }
 
     private static class DropPayload {
         List<String> cards;

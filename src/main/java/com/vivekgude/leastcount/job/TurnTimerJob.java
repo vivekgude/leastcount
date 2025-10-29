@@ -57,6 +57,10 @@ public class TurnTimerJob extends BaseJob {
             long newMoveTime = System.currentTimeMillis() + (configured != null ? configured : 30000);
             gameCache.addFieldToMap(GAME + gameId, MOVE_TIME, String.valueOf(newMoveTime));
 
+            // Clear turn markers so next player can start fresh (timer expired, so previous player's turn is over)
+            gameCache.addFieldToMap(GAME + gameId, "lastAction", "NONE");
+            gameCache.addFieldToMap(GAME + gameId, "lastActor", "0");
+
             // Notify all players with stateupdate
             StateUpdate state = new StateUpdate();
             state.setType("stateupdate");

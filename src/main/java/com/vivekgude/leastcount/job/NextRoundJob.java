@@ -3,10 +3,10 @@ package com.vivekgude.leastcount.job;
 import com.vivekgude.leastcount.enums.GameState;
 import com.vivekgude.leastcount.model.ws.response.CardsRes;
 import com.vivekgude.leastcount.model.ws.response.GameStartRes;
-import com.vivekgude.leastcount.model.ws.response.Score;
-import com.vivekgude.leastcount.model.ws.response.ScoreRes;
+import com.vivekgude.leastcount.model.ws.response.StateUpdate;
 import com.vivekgude.leastcount.redis.GameCache;
 import com.vivekgude.leastcount.redis.PlayerCache;
+import com.vivekgude.leastcount.service.DeckService;
 import com.vivekgude.leastcount.util.Utils;
 import com.vivekgude.leastcount.util.WebSocketUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -17,7 +17,6 @@ import java.util.*;
 
 import static com.vivekgude.leastcount.constants.Constants.DEFAULT_CARDS_PER_PLAYER;
 import static com.vivekgude.leastcount.constants.Constants.DEFAULT_MOVE_TIME_MS;
-import static com.vivekgude.leastcount.constants.Constants.DECK_SIZE;
 import static com.vivekgude.leastcount.redis.GameCache.*;
 
 @Slf4j
@@ -26,97 +25,110 @@ public class NextRoundJob extends BaseJob {
 
     private final GameCache gameCache;
     private final PlayerCache playerCache;
+    private final DeckService deckService;
     private final JobSchedulerService jobSchedulerService;
 
-    public NextRoundJob(GameCache gameCache, PlayerCache playerCache, JobSchedulerService jobSchedulerService) {
+    public NextRoundJob(GameCache gameCache, PlayerCache playerCache, DeckService deckService,
+                       JobSchedulerService jobSchedulerService) {
         this.gameCache = gameCache;
         this.playerCache = playerCache;
+        this.deckService = deckService;
         this.jobSchedulerService = jobSchedulerService;
     }
 
     @Override
     protected void executeJob(JobExecutionContext context) throws Exception {
         String gameId = context.getJobDetail().getJobDataMap().getString("gameId");
-
-        // Validate we are in WAITING state and enough active players
-        if (gameCache.getGameState(gameId) != GameState.WAITING.getType()) {
+        
+        // Check if game is still in waiting state
+        int gameState = gameCache.getGameState(gameId);
+        if (gameState != GameState.WAITING.getType()) {
+            log.warn("NextRoundJob: Game {} is not in waiting state, current: {}", gameId, gameState);
             return;
         }
-        List<Long> players = gameCache.getActivePlayers(gameId);
-        if (players == null || players.size() < 2) {
+
+        // Get active players (non-eliminated)
+        List<Long> activePlayers = gameCache.getActivePlayers(gameId);
+        if (activePlayers.size() < 2) {
+            log.warn("NextRoundJob: Not enough active players for game {}", gameId);
             return;
         }
 
-        // Build two-deck shuffled and deal
-        List<String> deck = Utils.generateShuffledDecks(DECK_SIZE);
-        int cardsPerPlayer = Optional.ofNullable(gameCache.getCardsPerPlayerOrNull(gameId))
-                .orElse(DEFAULT_CARDS_PER_PLAYER);
-
-        int dealt = 0;
-        for (Long pid : players) {
-            int startIndex = dealt;
-            int endIndex = startIndex + cardsPerPlayer;
-            List<String> playerCards = new ArrayList<>(deck.subList(startIndex, endIndex));
-            dealt += cardsPerPlayer;
-            playerCache.setPlayerCards(gameId, String.valueOf(pid), playerCards);
+        // Get per-game configuration
+        Integer cardsPerPlayer = gameCache.getCardsPerPlayerOrNull(gameId);
+        if (cardsPerPlayer == null) {
+            cardsPerPlayer = DEFAULT_CARDS_PER_PLAYER;
         }
 
-        // Initialize piles
+        // Generate new deck and deal cards
+        List<String> deck = Utils.generateTwoDecksShuffled();
+        List<String> remainingDeck = new ArrayList<>(deck);
+
+        // Deal cards to active players
+        for (Long playerId : activePlayers) {
+            List<String> playerCards = new ArrayList<>();
+            for (int i = 0; i < cardsPerPlayer; i++) {
+                if (!remainingDeck.isEmpty()) {
+                    playerCards.add(remainingDeck.remove(0));
+                }
+            }
+            playerCache.setPlayerCards(gameId, String.valueOf(playerId), playerCards);
+        }
+
+        // Set up game state
+        gameCache.setDeck(gameId, remainingDeck);
         gameCache.setOpenPile(gameId, Collections.emptyList());
-        if (dealt < deck.size()) {
-            gameCache.setDeck(gameId, new ArrayList<>(deck.subList(dealt, deck.size())));
-        } else {
-            gameCache.setDeck(gameId, Collections.emptyList());
-        }
-
-        // Set INPROGRESS, first player, and move time
         gameCache.addFieldToMap(GAME + gameId, STATE, String.valueOf(GameState.INPROGRESS.getType()));
-        long firstPlayer = players.get(0);
+
+        // Set first player and move time
+        Long firstPlayer = activePlayers.get(0);
         gameCache.addFieldToMap(GAME + gameId, CURRENT_PLAYER, String.valueOf(firstPlayer));
-        long configuredMove = Optional.ofNullable(gameCache.getMoveTimeConfigOrNull(gameId))
-                .orElse(DEFAULT_MOVE_TIME_MS);
-        long moveTime = System.currentTimeMillis() + configuredMove;
+
+        Long moveTimeConfig = gameCache.getMoveTimeConfigOrNull(gameId);
+        long moveTime = System.currentTimeMillis() + (moveTimeConfig != null ? moveTimeConfig : DEFAULT_MOVE_TIME_MS);
         gameCache.addFieldToMap(GAME + gameId, MOVE_TIME, String.valueOf(moveTime));
 
-        // Broadcast gamestart and private hands
-        GameStartRes startRes = new GameStartRes(GameState.INPROGRESS.getType(), firstPlayer, moveTime);
-        startRes.setType("gamestartres");
-        WebSocketUtil.broadcastToGame(gameId, startRes);
+        // Broadcast game start
+        GameStartRes gameStartRes = new GameStartRes();
+        gameStartRes.setType("gamestartres");
+        gameStartRes.setGameId(gameId);
+        gameStartRes.setPlayers(activePlayers);
+        WebSocketUtil.broadcastToGame(gameId, gameStartRes);
 
-        for (Long pid : players) {
-            List<String> playerCards = playerCache.getPlayerCards(gameId, String.valueOf(pid));
-            if (playerCards != null && !playerCards.isEmpty()) {
-                CardsRes cardsRes = new CardsRes();
-                cardsRes.setType("cardsres");
-                cardsRes.setGameId(gameId);
-                cardsRes.setCards(playerCards);
-                cardsRes.setReceiver(pid);
-                WebSocketUtil.sendMessage(gameId, pid, cardsRes);
-            }
+        // Send cards to each player privately
+        for (Long playerId : activePlayers) {
+            List<String> playerCards = playerCache.getPlayerCards(gameId, String.valueOf(playerId));
+            CardsRes cardsRes = new CardsRes();
+            cardsRes.setType("cardsres");
+            cardsRes.setGameId(gameId);
+            cardsRes.setCards(playerCards);
+            cardsRes.setReceiver(playerId);
+            WebSocketUtil.sendMessage(gameId, playerId, cardsRes);
         }
 
-        // Broadcast current cumulative scores
-        List<Score> scores = new ArrayList<>();
-        for (Long pid : gameCache.getJoinedPlayers(gameId)) {
-            scores.add(new Score(pid, gameCache.getGameScore(gameId, pid)));
+        // Broadcast state update
+        StateUpdate state = new StateUpdate();
+        state.setType("stateupdate");
+        state.setCurrentPlayer(firstPlayer);
+        state.setMoveTime(moveTime);
+        state.setOpen(Collections.emptyList());
+        state.setDeckCount(remainingDeck.size());
+        state.setGameScores(gameCache.getAllGameScores(gameId));
+        state.setEliminated(gameCache.getEliminatedPlayers(gameId));
+        Integer roundNo = gameCache.getRoundNoOrNull(gameId);
+        state.setRoundNo(roundNo != null ? roundNo : 1);
+        WebSocketUtil.broadcastToGame(gameId, state);
+
+        // Schedule turn timer
+        try {
+            Map<String, Object> jobData = new HashMap<>();
+            jobData.put("gameId", gameId);
+            jobSchedulerService.scheduleOneTimeJob("turnTimer_" + gameId, TurnTimerJob.class,
+                    new Date(moveTime), jobData);
+        } catch (Exception e) {
+            log.error("Failed to schedule turn timer for game {}", gameId, e);
         }
-        ScoreRes scoreRes = new ScoreRes(scores);
-        scoreRes.setType("scoreres");
-        WebSocketUtil.broadcastToGame(gameId, scoreRes);
 
-        // Schedule turn timer and initial state
-        Map<String, Object> jobData = new HashMap<>();
-        jobData.put("gameId", gameId);
-        jobSchedulerService.scheduleOneTimeJob("turnTimer_" + gameId, TurnTimerJob.class,
-                new Date(moveTime), jobData);
-
-        Map<String, Object> initialMoveData = new HashMap<>();
-        initialMoveData.put("gameId", gameId);
-        jobSchedulerService.scheduleOneTimeJob("initialPlayerMove_" + gameId, InitialPlayerMoveJob.class,
-                new Date(System.currentTimeMillis() + 2000), initialMoveData);
-
-        log.info("Auto next round started for game {} with {} active players", gameId, players.size());
+        log.info("NextRoundJob: Started round for game {} with {} active players", gameId, activePlayers.size());
     }
 }
-
-

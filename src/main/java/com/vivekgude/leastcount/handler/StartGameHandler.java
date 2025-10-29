@@ -88,8 +88,9 @@ public class StartGameHandler implements MessageHandler {
                 // Store cards in cache
                 playerCache.setPlayerCards(gameId, String.valueOf(playerId), playerCards);
                 
-                // Initialize player score to 0
+                // Initialize player score to 0 in both PlayerCache and GameCache for consistency
                 playerCache.initializePlayerScore(gameId, String.valueOf(playerId));
+                gameCache.setGameScore(gameId, playerId, 0);
 
                 log.info("Assigned {} cards to player {} in game {} and initialized score to 0", playerCards,
                         playerId, gameId);

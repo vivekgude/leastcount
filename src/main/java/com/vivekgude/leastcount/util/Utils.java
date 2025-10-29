@@ -44,7 +44,18 @@ public class Utils {
             String rankPart = code.substring(0, code.length() - 1);
             try {
                 int rank = Integer.parseInt(rankPart);
-                total += rank;
+                // Apply proper card values: A=1, J=11, Q=12, K=13, others face value
+                if (rank == 1) {
+                    total += 1; // Ace = 1
+                } else if (rank == 11) {
+                    total += 11; // Jack = 11
+                } else if (rank == 12) {
+                    total += 12; // Queen = 12
+                } else if (rank == 13) {
+                    total += 13; // King = 13
+                } else {
+                    total += rank; // 2-10 use face value
+                }
             } catch (NumberFormatException ignored) {
             }
         }
@@ -55,6 +66,26 @@ public class Utils {
     static String extractRank(String code) {
         if (code == null || code.isEmpty()) return "";
         return code.substring(0, code.length() - 1);
+    }
+
+    /**
+     * Generate two standard decks combined and shuffled
+     */
+    public static List<String> generateTwoDecksShuffled() {
+        return generateShuffledDecks(2);
+    }
+
+    /**
+     * Check if all cards in a list have the same rank
+     */
+    public static boolean allSameRank(List<String> cards) {
+        if (cards == null || cards.isEmpty()) return false;
+        if (cards.size() == 1) return true;
+        
+        String firstRank = extractRank(cards.get(0));
+        return cards.stream()
+                .map(Utils::extractRank)
+                .allMatch(rank -> rank.equals(firstRank));
     }
 
 }

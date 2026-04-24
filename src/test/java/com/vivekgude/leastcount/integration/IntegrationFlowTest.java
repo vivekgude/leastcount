@@ -159,7 +159,8 @@ class IntegrationFlowTest {
         verify(playerCache).removePlayerCards(gameId, String.valueOf(p2));
         verify(gameCache).setOpenPile(gameId, Collections.emptyList());
         verify(gameCache).setDeck(gameId, Collections.emptyList());
-        verify(jobSchedulerService).deleteJob("turnTimer_" + gameId);
+        // turnTimer is deleted twice: once at show start (B2 fix), once in game-end cleanup
+        verify(jobSchedulerService, times(2)).deleteJob("turnTimer_" + gameId);
         verify(jobSchedulerService).deleteJob("initialPlayerMove_" + gameId);
     }
 }

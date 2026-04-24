@@ -91,8 +91,8 @@ public class NextRoundJob extends BaseJob {
         // Broadcast game start
         GameStartRes gameStartRes = new GameStartRes();
         gameStartRes.setType("gamestartres");
-        gameStartRes.setGameId(gameId);
-        gameStartRes.setPlayers(activePlayers);
+        gameStartRes.setCurrentPlayer(firstPlayer);
+        gameStartRes.setMoveTime(moveTime);
         WebSocketUtil.broadcastToGame(gameId, gameStartRes);
 
         // Send cards to each player privately

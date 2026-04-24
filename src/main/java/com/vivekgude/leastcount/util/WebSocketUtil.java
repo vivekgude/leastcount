@@ -2,7 +2,6 @@ package com.vivekgude.leastcount.util;
 
 import com.google.gson.Gson;
 
-import com.vivekgude.leastcount.model.ws.WebSocketRes;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 
@@ -32,7 +31,7 @@ public class WebSocketUtil {
         sessions.remove(sessionKey);
     }
 
-    public static void sendMessage(String gameId, long userId, WebSocketRes message) throws IOException {
+    public static void sendMessage(String gameId, long userId, Object message) throws IOException {
         String sessionKey = createSessionKey(gameId, userId);
         WebSocketSession session = sessions.get(sessionKey);
         if (session != null && session.isOpen()) {
@@ -41,7 +40,7 @@ public class WebSocketUtil {
         }
     }
 
-    public static void broadcastToGame(String gameId, WebSocketRes message) throws IOException {
+    public static void broadcastToGame(String gameId, Object message) throws IOException {
         // Send message to all players in the game
         sessions.entrySet().stream()
                 .filter(entry -> entry.getKey().startsWith(gameId + ":"))

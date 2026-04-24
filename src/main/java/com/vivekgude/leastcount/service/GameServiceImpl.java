@@ -44,10 +44,10 @@ public class GameServiceImpl implements GameService {
         // Persist per-game overrides if provided
         if (overrides != null) {
             if (overrides.getCardsPerPlayer() != null) {
-                gameCache.addFieldToMap(GAME + gameId, CARDS_PER_PLAYER, String.valueOf(overrides.getCardsPerPlayer()));
+                gameCache.addFieldToMap(GAME + gameId, com.vivekgude.leastcount.constants.Constants.CARDS_PER_PLAYER, String.valueOf(overrides.getCardsPerPlayer()));
             }
             if (overrides.getExitScore() != null) {
-                gameCache.addFieldToMap(GAME + gameId, EXIT_SCORE, String.valueOf(overrides.getExitScore()));
+                gameCache.addFieldToMap(GAME + gameId, com.vivekgude.leastcount.constants.Constants.EXIT_SCORE, String.valueOf(overrides.getExitScore()));
             }
             if (overrides.getInvalidDeclarationPenalty() != null) {
                 gameCache.addFieldToMap(GAME + gameId, INVALID_PENALTY, String.valueOf(overrides.getInvalidDeclarationPenalty()));

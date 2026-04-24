@@ -62,20 +62,20 @@ public class DropHandler extends AbstractMessageHandler implements MessageHandle
                 return;
             }
 
-            // Validate ownership and same-rank
-            List<String> hand = new ArrayList<>(playerCache.getPlayerCards(gameId, String.valueOf(userId)));
-            if (!hand.containsAll(payload.cards)) {
-                sendError(gameId, userId, "ownership", "You don't own all cards");
-                return;
+            // Validate ownership per-instance (prevents duplicate-ID exploit like ["7H","7H"] with only one 7H in hand)
+            List<String> postDropHand = new ArrayList<>(playerCache.getPlayerCards(gameId, String.valueOf(userId)));
+            for (String card : payload.cards) {
+                if (!postDropHand.remove(card)) {
+                    sendError(gameId, userId, "ownership", "You don't own all cards");
+                    return;
+                }
             }
             if (!Utils.allSameRank(payload.cards)) {
                 sendError(gameId, userId, "invalid_drop", "All dropped cards must be same rank");
                 return;
             }
 
-            // Remove from hand and set open pile
-            hand.removeAll(payload.cards);
-            playerCache.setPlayerCards(gameId, String.valueOf(userId), hand);
+            playerCache.setPlayerCards(gameId, String.valueOf(userId), postDropHand);
             gameCache.setOpenPile(gameId, payload.cards);
 
             // Mark last action as DROP

@@ -48,6 +48,29 @@ public class ShowHandler extends AbstractMessageHandler implements MessageHandle
                 return;
             }
 
+            // Reject mid-turn show (after a drop, before a pick)
+            String lastAction = gameCache.getFieldInMap(GameCache.GAME + gameId, "lastAction");
+            String lastActor = gameCache.getFieldInMap(GameCache.GAME + gameId, "lastActor");
+            if ("DROP".equals(lastAction) && String.valueOf(userId).equals(lastActor)) {
+                sendError(gameId, userId, "invalid_show", "Cannot declare after dropping; complete your turn first");
+                return;
+            }
+
+            // Reject empty-hand show (cannot declare with zero cards)
+            List<String> declarerHand = playerCache.getPlayerCards(gameId, String.valueOf(userId));
+            if (declarerHand == null || declarerHand.isEmpty()) {
+                sendError(gameId, userId, "invalid_show", "Cannot declare with an empty hand");
+                return;
+            }
+
+            // Cancel the turn timer now — show ends the round, and we schedule NextRoundJob below.
+            // Without this, TurnTimerJob may fire during WAITING and corrupt state.
+            try {
+                jobSchedulerService.deleteJob("turnTimer_" + gameId);
+            } catch (Exception ex) {
+                log.error("Failed to cancel turn timer for game {}", gameId, ex);
+            }
+
             // Compute totals
             List<Long> players = gameCache.getActivePlayers(gameId);
             Map<Long, Integer> totals = new HashMap<>();

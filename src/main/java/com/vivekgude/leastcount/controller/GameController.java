@@ -36,7 +36,6 @@ public class GameController extends BaseController {
     @PostMapping("/joinGame/{gameId}")
     public ResponseEntity<?> joinGame(@AuthenticationPrincipal CustomUserDetails user,
             @PathVariable("gameId") String gameId) {
-        //TODO: change the RequestBody to POJO
         Optional<GameDTO> gameDetails = gameService.joinGame(user.getUserId(), user.getUsername(), gameId);
 
         if (gameDetails.isPresent()) {
@@ -49,7 +48,6 @@ public class GameController extends BaseController {
     @PostMapping("/exitGame/{gameId}")
     public ResponseEntity<?> exitGame(@AuthenticationPrincipal CustomUserDetails user,
             @PathVariable("gameId") String gameId) {
-        //TODO: change the RequestBody to POJO
         boolean isSuccess = gameService.exitGame(user.getUserId(), user.getUsername(), gameId);
 
         if (isSuccess) {

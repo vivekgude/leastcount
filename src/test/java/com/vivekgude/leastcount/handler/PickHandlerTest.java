@@ -71,7 +71,7 @@ class PickHandlerTest {
         when(gameCache.getCurrentPlayer(gameId)).thenReturn(userId);
         when(gameCache.getFieldInMap("game:" + gameId, "lastAction")).thenReturn("DROP");
         when(gameCache.getFieldInMap("game:" + gameId, "lastActor")).thenReturn(String.valueOf(userId));
-        when(deckService.drawFromClosed(gameId)).thenReturn("5D");
+        when(deckService.drawFromClosedPile(gameId)).thenReturn("5D");
         when(playerCache.getPlayerCards(gameId, String.valueOf(userId))).thenReturn(List.of());
         when(gameCache.getActivePlayers(gameId)).thenReturn(List.of(userId, 202L));
 
@@ -81,7 +81,7 @@ class PickHandlerTest {
 
         pickHandler.handleMessage(req);
 
-        verify(deckService, times(1)).drawFromClosed(gameId);
+        verify(deckService, times(1)).drawFromClosedPile(gameId);
         verify(playerCache, times(1)).setPlayerCards(eq(gameId), eq(String.valueOf(userId)), eq(List.of("5D")));
         verify(gameCache, times(1)).addFieldToMap(eq("game:" + gameId), eq("currentPlayer"), eq("202"));
     }
